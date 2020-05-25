@@ -1,0 +1,56 @@
+---
+title: "Starter tips on sharing data and analysis scripts"
+author: ~
+date: '2017-08-02T20:12:31-05:00'
+slug: data-sharing
+categories: ["open science", "reproducibility", "programming"]
+tags: ["open science", "reproducibility", "programming"]
+description: ~
+summary: "Getting your materials ready for public release."
+publishDate: '2017-08-02T20:12:31-05:00'
+DisableComments: no
+---
+
+
+
+<p>One practice that’s considered increasingly important to transparency and reproducibility is open data (and the accompanying analysis script). Of course, it’s one thing to say “just post it!” It can be overwhelming if you’re new to the practice. There are different considerations when posting data publicly than when you’re retaining it solely for internal use. I’ve outlined a few things to consider when posting your data, and a few tips to help make it more accessible and usable for others who want to access it.</p>
+<div id="subject-consent-and-irb-approval" class="section level1">
+<h1>1. Subject consent and IRB approval</h1>
+<p>If you intend to publicly post your data, a good place to start is updating your consent forms through the IRB to have some text about it, so that subjects can give their informed consent to have their data shared. For example, this is what the relevant text in our lab looks like for our subject pool recruits:</p>
+<blockquote>
+<p>Your responses will be assigned a code number that is not linked to your name or other identifying information. All data and consent forms will be stored in a locked room or a password-protected digital archive. Results of this study may be presented at conferences and/or published in books, journals, and/or the popular media. <strong>De-identified data may be made publicly avaliable.</strong></p>
+</blockquote>
+<p>That’s it! Then you can be assured in your studious data posting.</p>
+</div>
+<div id="anonymization" class="section level1">
+<h1>2. Anonymization</h1>
+<p>If you have data that uses some sort of non-random identifier for each subject, you’ll want to strip that out and replace it with some arbitrary subject ID before you post it. MTurk Worker IDs, for example, are not strictly anonymous, because they are linked to a person’s real information. You might want them during data collection, but not for public data.</p>
+<p>Even if you don’t collect subjects’ names or other explicitly identifying information, it can still be possible to identify someone from the information in their data. A particular combination of gender, general age range, workplace, and ethnicity in a survey of professors, for example, might identify someone. You don’t have to be hyper-vigilant about everything all of the time, but it’s not a bad idea to keep this in mind and possibly take steps around it, such as withholding or binning nonessential variables, if it seems like it would be an issue.</p>
+</div>
+<div id="file-format" class="section level1">
+<h1>3. File format</h1>
+<p>For maximum accessibility, plaintext is your friend. If at all possible, text should be in .txt format, column-data should be in .csv format, and images should be in .jpg, .png, .tiff, or some other common form. If possible, you want to avoid having data in proprietary forms, like .psd (Photoshop) which some people may not be able to open. Word and Excel documents can behave in strange ways if you open them in other applications, and sometimes aren’t back-compatible with older version of the software. You want anyone to be able to open your files, regardless of their setup.</p>
+<p>Similarly, you want your analysis code in its source format and in plaintext. You don’t want to wrap things in executables, or post code as an image or word-processed document.</p>
+<p>Data should also be in their raw form. Cleaning, wrangling, and summarizing should be left to the scripts if possible.</p>
+</div>
+<div id="readmes" class="section level1">
+<h1>4. Readmes</h1>
+<p>You should include, along with your data and/or script, a readme that tells the user what they need to know. How do they run the analysis? Are there any special steps they need to take? What should things look like as it happens? What kind of output should they expect?</p>
+<p>You also need a readme for your data. What variables are included in the dataset? What is the datatype of each variable? If you opened up a new datafile and see a column of numbers ranging from 1 to 4, that could mean anything. Did it come from a Likert-type scale? Is it a count of some event? Is it a continuous variable, or a discrete one? This confusion is only worsened by unusual or non-descriptive variable name choices, like <code>psc_sf</code>. A detailed readme clears this up not only for the user, and but possibly for your future self!</p>
+</div>
+<div id="future-proofing" class="section level1">
+<h1>5. Future-proofing</h1>
+<p>If your analysis has a lot of dependencies–it loads a lot of packages, or requires something special–it’s very possible that it could break in the future with updates and new versions, or just not work for a user if they have a different setup. If you don’t want to be constantly maintaining your script, or trying to anticipate what things will look like for someone else, there are tools you can use that will wrap everything up for you in a bundle so that your project will always have the set of dependencies it needs. Here are a few:</p>
+<p><a href="https://www.docker.com/">Docker</a><br />
+<a href="https://www.reprozip.org/">ReproZip</a><br />
+<a href="https://github.com/benmarwick/rrtools"><code>rrtools</code> package</a><br />
+<a href="https://rstudio.github.io/packrat/">PackRat</a></p>
+<p>If you have a lightweight setup, you may not need these measures. But if it’s a concern, you have options!</p>
+</div>
+<div id="forever-homes" class="section level1">
+<h1>6. Forever homes</h1>
+<p>Ideally, you’ll want to host your resources in a reliable place that won’t give you or your users access problems, is content to host multiple filetypes, and makes retrieval easy. The <a href="https://osf.io">Open Science Framework</a> is a great option, as is <a href="https://github.com/">GitHub</a>. Plus, this can serve as your cloud-backup in case some cataclysm destroys your computer.</p>
+<p>This also makes it possible to have the analysis script download the data directly for a user, rather than relying on them to put it in the right place. For instance, you may have a line in your private version of the script that sets the current directory to <code>users/me/documents/folder_with_the_stuff</code>, which the user would have to change if you uploaded it as-is.</p>
+<hr />
+<p>Posting all this publicly can feel intimidating, especially if it’s a new experience. But the most important thing is that it’s out there. It doesn’t have to be perfect, and it gets easier and better with practice.</p>
+</div>

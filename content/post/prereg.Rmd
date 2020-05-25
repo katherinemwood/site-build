@@ -1,0 +1,60 @@
+---
+title: "Considerations when writing a preregistration if you're new to all this"
+author: ~
+date: '2017-06-26T16:11:46-05:00'
+slug: preregistration
+categories: ["reproducibility", "open science"]
+tags: ["open science", "preregistration", "reproducibility", "methods"]
+description: ~
+summary: "How do you know where to start?"
+publishDate: '2017-06-26T16:11:46-05:00'
+DisableComments: no
+---
+
+(Note: I apparently use preregistration and pre-registration interchangeably, because I guess I want to have my hyphenation cake and eat it, too.)
+
+I'm a selfish preregisterer (Preregisterizer? Preregistrar? Preregistrix?). I preregister experiments primarily for my own benefit. I make as many decisions as I can up front, when I'm unbiased and unattached. Yes, it's more transparent, and yes, it provides a record to others that you made your decisions ahead of time and not in a post-hoc way. But I mostly do it for myself.
+
+Like Odysseus tying himself to the mast, preregistration saves you from the siren song of totally justifiable post-hoc decisions that just happen to make things work a little more nicely. I do think that usually this isn't ill-intentioned or even necessarily deliberate, but I do think it is extremely hard (if not impossible) to make decisions in an unbiased way once the data have started coming in.
+
+Preregistration can be an asset, not an extra chore. It eliminates decision points, which speeds up the process considerably (especially in the analysis stage). It provides a record to yourself of your methods, analysis intentions, and motivating rationale. It also, of course, provides this same record to others.
+
+So, what are some things you might want to think about when writing a pre-registration if you're just starting out?
+
+#1. What are your hypotheses and predictions?
+
+Why are you running this study? What hypotheses are you interested in testing, or what theories are you exploring? Do you have predictions about how the data will look, or a set of possible outcomes depending on what mechanisms are at work? Can you generate hypothetical/example data for these possibilities?
+
+#2. How many subjects?
+
+How many people are you going to run, and why? Maybe you do a power analysis to figure out how many you would need to find your smallest effect size of interest, maybe you just always like to run 50 people per group. However you decide on your number, you want to decide on this upfront.
+
+Alternatively, if you're going to be doing a sequential analysis, where you periodically inspect the data over the course of collection and stop once you've reached some threshold (such as a Bayes factor of 10 in either support of the alternative or support of the null), you'll want to specify those details. What is the stopping point? How many batches will you run?
+
+How will you be recruiting people? What's their compensation? Are their any inclusion criteria they have to meet (right-handed, normal or corrected-normal vision, etc)?
+
+#3. What are your methods?
+
+How are you going to run the study? To address this, I usually like to just write the methods section. I think it's important to be detailed here because you want to prevent nudging of the experimental procedure if it "doesn't seem to be working." If possible, can you upload your experimental script as it will be run and all of the stimuli?
+
+If you always test in the same place in the same way, you could write up a general equipment page that you link to in addition to the details of your particular study (if you always use the same eyetracker, for example).
+
+This will make writing the methods section a breeze when the time comes!
+
+#4. What is your analysis plan?
+
+How are you going to analyze the data? What kind of tests are you going to do, and between which conditions? Are there conditions under which you will pool observations across conditions? You want to make all of these decisions before you have any idea what the data are. .
+
+If possible, can you upload the very script you'll use to analyze the data?
+
+How are you going to code free-responses? If people have to be classified, how are you going to do it? In the research I do, I run a lot of inattentional blindness studies. One of the things we have to decide is how to determine "noticers" (people who saw the unexpected event) from "nonnoticers" (people who missed it). This is a very consequential decision, and is definitely not one we want to have any flexibility over after the data have come in.
+
+Are you going to exclude subjects or observations? Under what conditions? Try to imagine every possible reason you might need to exclude someone and list it. These can be things like failing attention checks, performing below chance on some critical accuracy measure, falling asleep during the experiment, reporting colorblindness during a color-based study, and so on.
+
+#Practice makes perfect
+
+I wasn't sure about this whole preregistration thing when I first started. It seemed like just another chore, and I was on the up and up, so why did I need to do this, anyway? But after I ran my first preregistered experiment, I came to appreciate the absence of flexibility. Even in what I expected to be a completely straightforward experiment, there were dozens of little decisions I could have made in the moment. It was so freeing to be able to just stick to the plan and have all the decisions made ahead of time. No agonizing, no doubting, no trying a million different things in the off-chance that some other analysis would look better. I just followed my map right out of the garden of forking paths.
+
+If you want to start pre-registering your work, the [Open Science Framework](https://osf.io/) is a great option. There's also AsPredicted.
+
+Preregistering a study for the first time can feel strange, particularly if you're accustomed to running non-preregistered studies. When you're used to dealing with problems and decision points as they emerge over the course of a study, rather than anticipating them ahead of time, it can be hard to even enumerate them. Like anything, though, it gets much easier with practice.

@@ -1,0 +1,37 @@
+---
+title: "5 Minute Simulation: Lonely Cards"
+author: ~
+date: '2017-06-26T12:34:18-05:00'
+slug: card_simulation
+categories: ["R", "simulation", "probability"]
+tags: ["R", "Shiny", "simulation", "probability"]
+summary: "Solving a probability question with simulation."
+description: ~
+publishDate: '2017-06-26T12:34:18-05:00'
+DisableComments: no
+---
+
+
+
+<p>FiveThirtyEight posts math, logic, and probability puzzles each week. I was tempted by this week’s <a href="http://fivethirtyeight.com/features/can-you-deal-with-these-card-game-puzzles/">Riddler Express</a>:</p>
+<blockquote>
+<p>On snowy afternoons, you like to play a solitaire “game” with a standard, randomly shuffled deck of 52 cards. You start dealing cards face up, one at a time, into a pile. As you deal each card, you also speak aloud, in order, the 13 card faces in a standard deck: ace, two, three, etc. (When you get to king, you start over at ace.) You keep doing this until the rank of the card you deal matches the rank you speak aloud, in which case you lose. You win if you reach the end of the deck without any matches.</p>
+</blockquote>
+<blockquote>
+<p>What is the probability that you win?</p>
+</blockquote>
+<p>My combinatorics skills are rusty, so I’m still hacking away at the closed-form solution. But, where cunning fails, brute force may suffice. While the closed-form approach is proving challenging (for me), this is fairly trivial to approximate through simulation. Recreating the game itself only takes a line or two of code, and then we can “play” hundreds of thousands of simulated games to get an idea of how often we win. <a href="https://katherinemwood.shinyapps.io/lonely_cards/">Here’s a simple shiny app</a> with the results, and here’s the dead-simple code for simulating the game itself:</p>
+<pre class="r"><code>cards &lt;- function() {
+#make a deck; leave this sequence fixed for the verbal sequence,
+#and scramble it to simulate the cards being dealt
+deck &lt;- rep(c(&#39;ace&#39;, as.character(seq(2:10)),
+&#39;jack&#39;, &#39;queen&#39;, &#39;king&#39;), times=4)
+#You win if none of the ranks line up; you lose if one or more does
+return(as.numeric(!(sum(deck == sample(deck)) &gt; 0))) #1 is win, 0 is lose
+}
+results &lt;- replicate(100000, cards())
+paste(&#39;Win percentage: &#39;, sum(results)/1000,&#39;%&#39;, sep=&#39;&#39;)</code></pre>
+<pre><code>## [1] &quot;Win percentage: 1.639%&quot;</code></pre>
+<p>I’ll update this post with the closed-form solution if I manage to work it out (failing that, I’ll just link to the solution on FiveThirtyEight).</p>
+<p><a href="https://github.com/katherinemwood/lonely_cards">Here’s the source code</a> for the shiny app.</p>
+<p>UPDATE: It turns out the <a href="https://fivethirtyeight.com/features/how-long-will-it-take-to-blow-out-the-birthday-candles/#correction">closed-form solution to this riddle</a> is nontrivial! It relies on a branch of combinatorics called <a href="http://mathworld.wolfram.com/Derangement.html">“derangements”</a> I didn’t encounter in my (admittedly less than comprehensive) math and stats education.</p>

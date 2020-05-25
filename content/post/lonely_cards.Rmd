@@ -1,0 +1,39 @@
+---
+title: "5 Minute Simulation: Lonely Cards"
+author: ~
+date: '2017-06-26T12:34:18-05:00'
+slug: card_simulation
+categories: ["R", "simulation", "probability"]
+tags: ["R", "Shiny", "simulation", "probability"]
+summary: "Solving a probability question with simulation."
+description: ~
+publishDate: '2017-06-26T12:34:18-05:00'
+DisableComments: no
+---
+FiveThirtyEight posts math, logic, and probability puzzles each week. I was tempted by this week's [Riddler Express](http://fivethirtyeight.com/features/can-you-deal-with-these-card-game-puzzles/):
+
+
+> On snowy afternoons, you like to play a solitaire “game” with a standard, randomly shuffled deck of 52 cards. You start dealing cards face up, one at a time, into a pile. As you deal each card, you  also speak aloud, in order, the 13 card faces in a standard deck: ace, two, three, etc. (When you get to king, you start over at ace.) You keep doing this until the rank of the card you deal matches the rank you speak aloud, in which case you lose. You win if you reach the end of the deck without any matches.
+
+> What is the probability that you win?
+
+My combinatorics skills are rusty, so I'm still hacking away at the closed-form solution. But, where cunning fails, brute force may suffice. While the closed-form approach is proving challenging (for me), this is fairly trivial to approximate through simulation. Recreating the game itself only takes a line or two of code, and then we can "play" hundreds of thousands of simulated games to get an idea of how often we win. [Here's a simple shiny app](https://katherinemwood.shinyapps.io/lonely_cards/) with the results, and here's the dead-simple code for simulating the game itself:
+
+```{r}
+cards <- function() {
+#make a deck; leave this sequence fixed for the verbal sequence,
+#and scramble it to simulate the cards being dealt
+deck <- rep(c('ace', as.character(seq(2:10)),
+'jack', 'queen', 'king'), times=4)
+#You win if none of the ranks line up; you lose if one or more does
+return(as.numeric(!(sum(deck == sample(deck)) > 0))) #1 is win, 0 is lose
+}
+results <- replicate(100000, cards())
+paste('Win percentage: ', sum(results)/1000,'%', sep='')
+```
+
+I'll update this post with the closed-form solution if I manage to work it out (failing that, I'll just link to the solution on FiveThirtyEight).
+
+[Here's the source code](https://github.com/katherinemwood/lonely_cards) for the shiny app.
+
+UPDATE: It turns out the [closed-form solution to this riddle](https://fivethirtyeight.com/features/how-long-will-it-take-to-blow-out-the-birthday-candles/#correction) is nontrivial! It relies on a branch of combinatorics called ["derangements"](http://mathworld.wolfram.com/Derangement.html) I didn't encounter in my (admittedly less than comprehensive) math and stats education.

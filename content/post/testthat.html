@@ -1,0 +1,104 @@
+---
+title: "Intro to unit testing in R"
+author: ~
+date: '2017-06-26T15:46:23-05:00'
+slug: unittesting
+categories: ["R", "programming"]
+tags: ["R", "programming", "unit testing", "reproducibility"]
+description: ~
+summary: "The best way to know if something works is to test it."
+publishDate: '2017-06-26T15:46:23-05:00'
+DisableComments: no
+---
+
+
+
+<p>I’ve mentioned before that a great coding practice you can ingrain into your work is unit testing. The idea is simple: you write a script that automatically evaluates pieces of your code and checks it against expected behavior. For example, a correlation coefficient should always be between -1 and 1, so you could write a test that will raise an error if it encounters an r beyond these values. Or, you could check your data file after it’s read in to make sure it reads in with all rows and columns, nothing missing where it shouldn’t be, and every column of the data type you want it.</p>
+<p>Hadley Wickham wrote an awesome R package that makes writing tests easy and pretty intuitive. In the <code>testthat</code> package, you can bundle a series of <code>expect_that</code> statements into a <code>test_that</code> suite, which ideally would run a small cluster of closely related tests. Multiple <code>test_that</code> suites can be grouped into a <code>context</code> that tests an entire file, or a big chunk of functionality inside a file.</p>
+<p>I’ll walk through examples. Code for this is up on GitHub, like always.</p>
+<p>So first, to get things set up, you have a file that you want to test, and then you make a test script to go along with it. If you want to set up automated testing, name this file <code>test_something.R</code>. <code>testthat</code> looks for files that start with <code>test_</code>.</p>
+<p>Once your file is set up, we can start writing tests! First, you source in the file that you’ll be testing:</p>
+<pre class="r"><code>source(&#39;dummy_script.R&#39;)</code></pre>
+<p>The first thing I’ll be testing is that the data I defined in the dummy script meets my expectations. For reference, this is the data file I defined, but we can pretend I read it in from somewhere:</p>
+<pre class="r"><code>testing_data &lt;- data.frame(&#39;letters&#39;=c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;),
+                          &#39;numbers&#39;=seq(1, 4))
+print(testing_data)</code></pre>
+<pre><code>##   letters numbers
+## 1       a       1
+## 2       b       2
+## 3       c       3
+## 4       d       4</code></pre>
+<p>Creative, huh?</p>
+<p>So, because this dummy script has multiple different parts that will all get tested, I’m first going to set a context just for the data. Doing so couldn’t be easier:</p>
+<pre class="r"><code>context(&#39;testing data integrity&#39;)</code></pre>
+<p>This just gives the test block a readable label that prints during output. Typically you have one context per file, but I’ve got multiple in this file for demo purposes.</p>
+<p>Within a context, you have tests. Tests are best deployed to test very targeted functionality, and each test contains a small number of expect statements that define expected behavior. Here’s an example with our silly data frame. We want to make sure it has the expected number of columns and rows, so we could write a test that checks for this.</p>
+<pre class="r"><code>test_that(&#39;data dimensions correct&#39;, {
+    expect_equal(ncol(testing_data), 2)
+    expect_equal(nrow(testing_data), 4)
+})</code></pre>
+<p>All we’re saying is we expect the actual number of columns in our data, returned by ncol(), to be equal to our number of variables (here 2), and that we should have four subjects. The first argument to <code>expect_equal</code> is what we’re testing, and the second argument is what that thing should be equal to (both of these tests pass).</p>
+<p>This is sort of a goofy example, but you can imagine real applications–making sure your data has the right number of variables, for instance, or making sure that you have as many files as you do subjects to make sure data isn’t missing. If you’ve examined your data up using <code>View()</code> or <code>head()</code> just to check, you’ve pretty much done the manual equivalent of this test.</p>
+<p>We could also check that no values are missing:</p>
+<pre class="r"><code>test_that(&#39;no missing values&#39;, {
+    expect_identical(testing_data, na.omit(testing_data))
+})</code></pre>
+<p>This is a different expect statement. This is <code>expect_identical</code>, which has no tolerance (unlike <code>expect_equal</code>). We should have exactly the same thing after removing missing values if we’re not anticipating any. (There’s also an <code>expect_equivalent</code> statement, which ignores the attributes of its comparators. There are about 22 different <code>expect_</code> statements–you can read more about them in the <a href="http://r-pkgs.had.co.nz/tests.html">package documentation</a>.)</p>
+<p>How about we check to make sure our data is of the right type? We can use <code>expect_is()</code>, which checks if the first argument inherits from the class specified in the second argument.</p>
+<pre class="r"><code>test_that(&#39;data types correct&#39;, {
+    expect_is(testing_data,&#39;data.frame&#39;)
+    expect_is(testing_data$numbers, &#39;integer&#39;)
+    #expect_is(testing_data$letters, &#39;character&#39;) #this one fails; they&#39;re factors
+})
+
+#note that an equivalent statement would be:
+
+expect_that(testing_data, is_a(&#39;data.frame&#39;))</code></pre>
+<p>This might seem silly, but I’ve been burned before by not realizing that what I thought was numeric data was actually stored as a factor. Never hurts to check before you start analyzing!</p>
+<p>We can also, for example, run tests to make sure outputs from models conform to expectations. Here’s our toy model:</p>
+<pre class="r"><code>model_data = data.frame(&#39;y&#39;=c(rnorm(25, 0, 1), rnorm(25, 1, 1)),
+&#39;x&#39;=rep(c(&#39;c1&#39;, &#39;c2&#39;), each=25))
+test.mod = lm(y ~ x, data=model_data)</code></pre>
+<p>Now we could test, for example, that we have the expected number of coefficients:</p>
+<pre class="r"><code>test_that(&#39;right number of coefficients&#39;, {
+    expect_equal(length(test.mod$coefficients), 2)
+})</code></pre>
+<p>Or that all the factor levels in the data are also in the model (here we have to be mindful about differences in data type; <code>levels</code> returns a character string, while the model object returns a named list).</p>
+<pre class="r"><code>test_that(&#39;all factor levels present&#39;, {
+    expect_equivalent(levels(model_data$x), unlist(test.mod$xlevels))
+})</code></pre>
+<p>How about verifying that the intercept equals the mean of our first group? Because one value is named and the other isn’t, <code>expect_equivalent</code> will be the statement to use:</p>
+<pre class="r"><code>test_that(&#39;mean of group 1 equals intercept&#39;, {
+    expect_equivalent(mean(model_data$y[model_data$x == &#39;c1&#39;]), test.mod$coefficients[&#39;(Intercept)&#39;])
+})</code></pre>
+<p>This is a very simple model, but you can imagine how it would be useful for a more complicated one.</p>
+<p>We can also test custom functions that we’ve written. I’ve written a silly little function that tells you whether a number is even or odd:</p>
+<pre class="r"><code>even_odd = function(n){
+    ifelse(n %% 2 == 0, print(&#39;even&#39;), print(&#39;odd&#39;))
+}</code></pre>
+<p>Then we can make sure it reports the correct output. We can do this even though it prints (instead of returning a value) with prints_text:</p>
+<pre class="r"><code>test_that(&#39;even_odd prints the right message&#39;, {
+    expect_that(even_odd(1), prints_text(&#39;odd&#39;))
+    expect_that(even_odd(6), prints_text(&#39;even&#39;))
+})</code></pre>
+<p>After you have the library loaded in and you’ve set the working directory to the right place, you can run the testing suite by calling <code>test_file('file_to_test.R')</code>. The advantage to calling this function, rather than just sourcing the file, is that it will run through all tests even if some fail. When you source it, the test script halts at the first error. If you have multiple testing files, you can call <code>test_dir('my_test_dir/')</code> instead, and it will run all of the <code>test_</code> files in that directory.</p>
+<p>Here’s what output looks like. You can see that all of our tests are grouped under their contexts, which is a nice way to organize things. Each little dot is a successful test, while a number indicates a failure (with more detail printed below).</p>
+<pre><code>&gt; test_file(&#39;test_dummy.R&#39;)
+testing data integrity: .....1
+testing model output: ...
+testing a custom function: ..</code></pre>
+<p>When we look in detail at the failure, we see that it’s titled with the name of our test_that suite (another good reason to be granular with how you organize your tests!), and then we see what went wrong:</p>
+<pre><code>Failed ---------------------------------------------------------------------------------------------
+1. Failure: data types correct (@test_dummy.R#17) -----------------------------------------------------
+testing_data$letters inherits from `factor` not `character`.
+
+
+DONE ===============================================================================================</code></pre>
+<p>So the context tells us which group of tests threw the error, and then the more detailed error message tells us which test failed (“data types correct” in the “data integrity” context). It also tells us exactly why the test failed. We wanted the data type to be a character, but it was read in as a factor. This alerts us that we need to set <code>stringsAsFactors</code> equal to <code>FALSE</code> when reading in our data (for example).</p>
+<p>Here are some general tips on writing tests from Wickham:</p>
+<blockquote>
+<p>Focus on testing the external interface to your functions - if you test the internal interface, then it’s harder to change the implementation in the future because as well as modifying the code, you’ll also need to update all the tests.<br />
+Strive to test each behaviour in one and only one test. Then if that behaviour later changes you only need to update a single test.<br />
+Avoid testing simple code that you’re confident will work. Instead focus your time on code that you’re not sure about, is fragile, or has complicated interdependencies. That said, I often find I make the most mistakes when I falsely assume that the problem is simple and doesn’t need any tests. Always write a test when you discover a bug. You may find it helpful to adopt the test-first philosophy. There you always start by writing the tests, and then write the code that makes them pass. This reflects an important problem solving strategy: start by establishing your success criteria, how you know if you’ve solved the problem. The nice thing about testing is that you can re-run the entire, automated set of tests any time you make a change to make sure you didn’t break anything. It’s a lot faster and more consistent than print-debugging or command-line inspection, and it will save you time if you write your tests early (or even before) in the coding process.</p>
+</blockquote>
+<p>Happy testing!</p>

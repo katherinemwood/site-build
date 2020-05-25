@@ -1,0 +1,52 @@
+---
+title: "Open Science in Practice"
+author: ~
+date: '2017-06-26T13:48:35-05:00'
+slug: gams
+categories: ["science", "reproducibility"]
+tags: ["open science", "reproducibility", "preregistration"]
+description: ~
+summary: "A look inside an open science workflow."
+publishDate: '2017-06-26T13:48:35-05:00'
+DisableComments: no
+---
+
+
+
+<p>I will finish grad school a child of the replication crisis. My year and a half in grad school has been marked by bombshell failures-to-replicate, increasing adoption of Bayesian methods, and wider recognition of the insidious effects of questionable research practices.</p>
+<p>In many ways, I’m lucky. I didn’t have to make changes to the way I did things to adhere to better practices. I got to start with openness as one of the core tenets of how I conduct my research, and starting fresh is always easier than having to alter pre-existing patterns of behavior. It also helps to have a huge proponent of replication and open science as an advisor and to have come in at a time when there’s fantastic infrastructure in place.</p>
+<p>Here’s an example of what my process looks like. A lot of this has already been said by better minds, and none of what I do is revolutionary. But it can, perhaps, serve as an illustration of what it looks like to actually build these practices into your workflow.</p>
+<div id="planning-and-preregistration" class="section level2">
+<h2>1. Planning and preregistration</h2>
+<p>Once my advisor and I have finalized the approach to our next experiment, the preparation phase begins. I write-up and test my experiment script by running through the entire thing, as a subject would (and try to break it as a subject might).</p>
+<p>Because I’ve written the experiment script, I know exactly how the data will be saved out. This lets me write the entire analysis script, including wrangling, pre-processing, and figure generation. I test the functionality of the script on dummy data I generate during testing my experiment and make sure it runs properly.</p>
+<p>After this is done, it’s time to preregister–I like to do so at the <a href="https://osf.io/">Open Science Framework</a>. I outline my hypotheses and upload hypothetical data figures if my predictions are sufficiently specific. I describe all of my experiment methods in gory detail, including all measures collected, and attach my experimental script and any stimuli I use. I detail exactly which hypotheses I’m going to test, and how (which statistical test; how many tails, if applicable; the values of any parameters, such as priors for Bayes Factors, etc.). I explicitly state how many subjects we’ll be running and how we’re going to exclude subjects from analysis. I also upload my analysis script and any helper functions or files.</p>
+<p>Once all of these things are in place, I preregister the project. My preferred method is to enter it into embargo, and then make the project public after the paper has been submitted.</p>
+</div>
+<div id="data-collection" class="section level2">
+<h2>2. Data collection</h2>
+<p>This tends to be uneventful, since everything has been battle-tested and all decision have already been made. I do not examine the data, even just to look, as it comes in, so that if something unforeseen emerges that requires a change to protocol, I can make a new preregistration on OSF and affirm that it has been done in absence of knowledge of the data. I collect as many subjects as I said I would in my preregistration.</p>
+</div>
+<div id="analysis" class="section level2">
+<h2>3. Analysis</h2>
+<p>This also goes lightning-fast, because the script is already written. I just run the data through it, and know the results that I will be reporting as confirmatory immediately (no strolls through the garden of forking paths). This is great for me, because I cannot handle suspense when it comes to knowing the outcome of my experiments.</p>
+<p>That done, I can then poke around a little and explore the data if I wish, or do some robustness analyses. Anything that comes from this needs to be reported as exploratory if it is reported at all.</p>
+<p>I make sure to plot my raw data. Ideally I like to plot it along with my summary values in something like a violin plot (I like to do the raw points over the violin density graph, plus a line showing the mean and maybe some confidence intervals). It’s always a good idea to know the ins and outs of your data, which requires knowing what the raw distributions look like.</p>
+</div>
+<div id="post-raw-data" class="section level2">
+<h2>4. Post raw data</h2>
+<p>After the analysis is done, I add the raw data in its entirety to the project’s OSF page and include with it a README that provides detailed instructions on how to interpret the data. This has the nice added benefit of creating a secure backup of my data then and there.</p>
+<p>The project is still private at this point.</p>
+</div>
+<div id="reporting" class="section level2">
+<h2>5. Reporting</h2>
+<p>After repeating steps 1-4 as necessary for follow-up experiments, I write up the manuscript. The methods section is easy, as I pretty much wrote it already back in step 1. I make sure to include a link to my OSF page for the project, which I make public when submitting the manuscript, and include language making it clear that we report all conditions and measures.</p>
+<p>When we report our stats, we include all information necessary to recreate our analyses. This means correlations for within-subjects designs and cell means for ANOVAs. We also make sure to report how many people were excluded and what proportion of our sample that represents, and how many people ended up assigned to each condition, if applicable.</p>
+</div>
+<div id="pre-prints" class="section level2">
+<h2>6. Pre-prints</h2>
+<p>After the manuscript has been accepted (I’ll take Wishful Thinking for $800, Alex), I upload a preprint of the accepted version to PsyarXiv. I will do this for all of my papers, but I think it’s especially important in cases where one cannot publish open access. Most journals will tell you what the policy is regarding posting the paper to external sources.</p>
+<p>You can, of course, post a preprint before the paper has been accepted (most of the time this will not preclude later publishing in a journal), but my papers tend to undergo radical transformation during peer review, so I prefer to post a more final version.</p>
+<p>And that’s my process. Integrating open science and best research practices takes a little practice, but once you’ve gotten comfortable with your workflow it’s as easy as any other habit (and comes with a lot of benefits for your trouble).</p>
+<p>This workflow works pretty well for me, but I think it can be better. This year I would like to start using figshare, and do version control for my scripts with GitHub, and look into using RMarkdown for papers. There’s always more to learn!</p>
+</div>

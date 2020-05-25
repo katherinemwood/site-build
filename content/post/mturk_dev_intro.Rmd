@@ -1,0 +1,155 @@
+---
+title: "Getting started with the Mechanical Turk API"
+author: ~
+date: '2017-10-08T15:25:40-05:00'
+slug: aws-startup
+categories: ["tutorial"]
+tags: ["AWS", "Python", "Mechanical Turk"]
+description: ~
+summary: "How to get set up with AWS and Mechanical Turk."
+publishDate: '2017-10-08T15:25:40-05:00'
+DisableComments: no
+---
+
+Amazon's Mechanical Turk is a great research tool. You can get huge sample sizes that tend to be more diverse than what you can recruit from a Psychology department subject pool. But, with lots of data comes a new set of problems. It very quickly becomes impossible to manage things manually.
+
+One very useful tool for dealing with this is the MTurk API. This lets you programmatically access all of MTurk's functionality, and means you can write scripts to automate big tasks like fetching results, paying workers, or posting large numbers of HITs.
+
+There is something of a startup cost to this, though. If you're not sure where to start, or are feeling overwhelmed, here's a little guide to get you setup with the tools you'll need.
+
+This guide is for using the boto3 SDK (Python), but there are also some more general tips about working with AWS.
+
+##Accounts, Users, and Permissions Setup
+
+To work programmatically with the MTurk API, you need at minimum two accounts: an AWS account, and an account on the MTurk Requester site. However, you should also make two more accounts: one on the Requester Sandbox, and one on the Worker Sandbox. These last two accounts will let you test and experiment in an environment that looks and behaves just like the real MTurk website, but with none of the consequences.
+
+###1. AWS
+
+AWS stands for "Amazon Web Services." It's an umbrella that covers a huge array of the web-based services Amazon offers, including access to their cloud servers. Among these services is MTurk. Your billing info is stored with your AWS account, rather than your MTurk requester account; on the MTurk side of things, you pre-pay for HITs and deplete that purse, rather than having a direct link to your credit card.
+
+To set up an AWS account, go to the [website](https://aws.amazon.com/free/?sc_channel=PS&sc_campaign=acquisition_US&sc_publisher=google&sc_medium=cloud_computing_hv_b&sc_content=aws_core_e_control_q32016&sc_detail=aws&sc_category=cloud_computing&sc_segment=188908133959&sc_matchtype=e&sc_country=US&s_kwcid=AL!4422!3!188908133959!e!!g!!aws&ef_id=WUMEpQAAAHy41iUB:20171008221039:s) and sign up. The free tier of service is all that you'll need, if you're only going to be dealing with MTurk.
+
+One of the many nice features about the AWS account is the ability to create what are called IAM users. These are users that you can assign permissions to without giving them root access to your account. This is the setup I have with my advisor; he has the billing info assigned to his AWS account, but he made me a user with complete MTurk permissions. This means I can post and delete HITs, pay workers, even sign into the AWS console to manage my user settings, but I have no ability to access his AWS account.
+
+We'll create an IAM user with credentials that we'll use to play around in the sandbox, but that don't grant root access. Once the account is set up and you are signed in to your dashboard, type 'iam' in the AWS Services search bar. This will take you to your users dashboard; on the left hand side, go to the `users` menu and then click `Add User`. You can now set a name for this user; I recommend something obvious, like `reqester_sandbox` or `mturk`. Below that, you want to check the `Enable Programmatic Access` box. On the next page, you can select `Attach existing policies directly` (unless you want to deal with setting up groups, which can be useful if you're managing lab members and multiple people will need the same set of permissions). Since we're only dealing with MTurk, we don't have to get too fancy. If you search for `mechanical` in the policy search bar, you'll see one that says `AmazonMechanicalTurkFullAccess`. This is the policy we want to attach to this user; it gives full read and write access to MTurk. Check the box next to it and hit `Review`, then `Create User`. On this next screen, you will be presented with two very important pieces of information; the user access key, and the secret key. This is your only chance to take note of the secret key, so make a note of both of these passwords somewhere. We'll need them later.
+
+You'll also see a special URL that user can use to access the AWS console. This is another piece of information you would want to provide if you were setting up a user for another person.
+
+###2. Amazon's Mechanical Turk -- Requester
+
+The next step is to create an account on the [MTurk requester site](https://requester.mturk.com/). Once you've done that, head over to the `Developer` tab and scroll down until you see the `Link your AWS Account` option. You'll need to link these accounts together for programmatic access.
+
+###3. The Requester Sandbox
+
+If you keep scrolling under the `Developer` tab on the MTurk requester site, you'll see a `Register for Requester Sandbox` option. Follow this link and make a Sandbox account, and then link it up to your AWS account just like you did on the real MTurk site. The sandbox looks and acts just like the real MTurk, allowing you to do extensive testing on your HITs and qualifications before you launch them for real.
+
+###4. The Worker Sandbox
+
+You can also go over to the [worker sandbox](https://workersandbox.mturk.com/mturk/) and make an account there. This will let you see your HITs and qualification tests as real workers will.
+
+##Software Setup
+
+In order to handle Mechanical Turk operations via the command line, a few programs have to be installed.
+
+###1. Python
+
+##### On a Mac
+If you are on a Mac, Python is already installed and you don't need to do anything further.
+
+##### On Windows
+If you are on windows, you need to install Python 3. You can find Python's download link [here](https://www.python.org/downloads/release/python-2714/). You'll want to select `Windows x86 MSI Installer`.
+
+###2. Pip
+
+Pip is a package manager for Python that makes it very easy to install additional packages.
+
+##### On a Mac
+If you are on a Mac, navigate to Pip's [website](https://pip.pypa.io/en/stable/installing/) and download the file `get-pip.py`[https://bootstrap.pypa.io/get-pip.py] (make sure to save it as a .py file if it saves as .txt). Put this file on the desktop.
+
+Now, open up Terminal, and first enter the following command to navigate to your desktop:
+```{bash eval=FALSE}
+cd desktop
+```
+
+Now, we need to run the installation program. Do this by running the following command:
+```{bash eval=FALSE}
+python get-pip.py
+```
+
+The program will then run automatically to install pip. You may be prompted for your password at some points during this process.
+
+To verify that install was successful, run the following command:
+```{bash eval=FALSE}
+which pip
+```
+
+You should see a filepath output as a result, telling you where pip was installed. You can now get rid of the installer file if you like.
+
+##### On a Windows
+Since you installed Python, pip comes with it. You may, however, need to upgrade pip. Do so by opening the Command Line and running the following command:
+```{bash eval=FALSE}
+python -m pip install -U pip
+```
+
+This will upgrade pip to the latest version.
+
+###3. Boto3
+
+Now that pip is installed, it's easy to install the boto3 package. Simply run the following command in either Terminal or Command Line:
+```{bash eval=FALSE}
+pip install boto3
+```
+
+**IF YOU GET AN ERROR ON MAC:**  
+Try again, but this time run this command:
+```{bash eval=FALSE}
+sudo pip install boto3
+```
+
+You will be prompted for your password.
+
+##Managing your AWS credentials
+
+As a general rule, you don't ever want to hardcode your credentials into your code. We want to avoid this at the top of your scripts:
+
+```{python eval=FALSE, python.reticulate=FALSE}
+aws_access_key_id = 'my_access_code'
+aws_secret_access_key = 'my_super_secret_access_key'
+```
+
+The nice thing about boto3 is that it checks a few different places for credentials in a specified order. So, rather than put them in your script directly, you can squirrel them away in a hidden file that the script will access automatically. [This page](http://boto3.readthedocs.io/en/latest/guide/configuration.html) has several different options for setting up your credentials; if you're not comfortable with bash, I suggest making either a shared credentials file or a config file to house your credentials. This is where you'll put the access key and the secret key that you got from AWS back when you created a new user.
+
+##Testing your setup
+
+After all this legwork, it's time to test the setup! First, you'll want to copy-paste the code below into a file (adapted from step 5 [here](https://requester.mturk.com/developer)) and save it as `balance.py`; to make things easy, you might want to save it to the desktop for now.
+
+```{python eval=FALSE, python.reticulate=FALSE}
+import boto3
+
+region_name = 'us-east-1'
+
+endpoint_url = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
+
+client = boto3.client(
+    'mturk',
+    endpoint_url=endpoint_url,
+    region_name=region_name,
+)
+
+# This will return $10,000.00 in the MTurk Developer Sandbox
+print(client.get_account_balance()['AvailableBalance'])
+```
+
+You can then run it from the Terminal by executing the following commands:
+```{bash eval=FALSE}
+cd desktop
+python balance.py
+```
+
+If everything is working, you'll see it print 10,000. You always have 10k in the sandbox. If you call this with the real MTurk site, it will print your actual account balance.
+
+------
+
+You're now setup and ready to start managing MTurk programmatically. With boto3, you can do all sorts of things, including creating and posting hits, contacting workers, fetching results, and managing custom qualifications. This interface allows you to automate some of the more tedious aspects of MTurk, and you can always test everything in the Sandbox.
+
+Now that you're good to go, you can check out how to make [custom qualifications for workers using boto3](katherinemwood.github.io/post/qualifications/).

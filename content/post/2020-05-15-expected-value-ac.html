@@ -1,0 +1,87 @@
+---
+title: Probability and Animal Crossing
+author: ~
+date: '2020-05-15'
+slug: expected-value-ac
+categories: ["statistics", "probability"]
+tags: ["statistics", "probability"]
+description: ~
+publishDate: '2020-05-15T13:59:14-07:00'
+summary: "It's a numbers game."
+DisableComments: no
+draft: true
+---
+
+
+
+<p><em>Animal Crossing</em> is the wildly popular, deeply charming life-simulation game. It unfolds in real time, and progress can take actual calendar years. Progress in many aspects of the game is obtained by repeatedly experiencing events with small probabilities of acquiring a new item. In this world, probability is the most exalted god in the pantheon.</p>
+<div id="expected-value" class="section level2">
+<h2>Expected value</h2>
+<p>One of the many activities available to players in the charming life-simulation game Animal Crossing is growing trees. Plant a sapling or a piece of fruit, and four real-time days later you’ll have a mature tree.</p>
+<p>Once each day, a random spot in a player’s town will shine with golden light. If you dig in this spot, you’ll pull up 1,000 bells, the in-game currency. If you then proceed to bury some bells in the open glowing spot, four days later you’ll have a bell tree containing three bags of bells that you can harvest. Depending on what you bury, you may get three times what you buried, or you may get less.</p>
+<p>In the latest installment in the series, Animal Crossing: New Horizons, we know the exact probabilities for return thanks to people who have analyzed the game’s code. The breakdown goes like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Amount buried</th>
+<th align="left">Amount returned per bag</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><span class="math inline">\(100 \leq x \leq 1000\)</span></td>
+<td align="left"><span class="math inline">\(1000\)</span></td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(2000 \leq x \leq 9000\)</span></td>
+<td align="left"><span class="math inline">\(P(x) = .3, P(1000) = .7\)</span></td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(10,000 \leq x \leq 99,000\)</span></td>
+<td align="left"><span class="math inline">\(P(x) = .3, P(10,000) = .7\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>These probabilities apply to the tree itself, not each bag independently–each bag always has the same amount of bells in it.</p>
+<p>We can calculate the expected value of a sapling in the following way:</p>
+<p><code>$$E(X) = (x_{high} - b)p(x_{high}) + (x_{low} - b)p(x_{low})$$</code></p>
+<p>Where <span class="math inline">\(b\)</span> is the amount buried.</p>
+<p>With the help of a quick function and a graph, we can look at the expected value per sapling for all possible denominations.</p>
+<pre class="r"><code>expected_sapling_value &lt;- function(buried_amount) {
+  if (buried_amount &gt;= 100 &amp; buried_amount &lt;= 1000) {
+    return(3000 - buried_amount)
+  } else if (buried_amount &gt;= 2000 &amp; buried_amount &lt;= 9000) {
+    return(.7*(6000 - buried_amount) + .3*(2*buried_amount))
+  } else if (buried_amount &gt;= 10000 &amp; buried_amount &lt;= 99000){
+    return(.7*(30000 - buried_amount) + .3*(2*buried_amount))
+  } else {
+    return(NA)
+  }
+}</code></pre>
+<p>We can quickly make a dataframe for each valid burial amount and the corresponding expected value:</p>
+<pre class="r"><code>buried_values &lt;- c(seq(100, 1000, 100), seq(2000, 99000, 1000))
+expected_sapling_values &lt;- sapply(buried_values, expected_sapling_value)
+evs &lt;- data.frame(&quot;buried_amount&quot;=buried_values, &quot;expected_value&quot;=expected_sapling_values)</code></pre>
+<p>And plot it.</p>
+<pre class="r"><code>library(ggplot2)
+ggplot(data=evs, aes(x=buried_amount, y=expected_value)) +
+  geom_line() +
+  scale_x_continuous(name=&#39;Amount buried&#39;, breaks=seq(0, 100000, 10000), labels=scales::comma) + 
+  geom_vline(xintercept=10000, color=&#39;red&#39;, lty=&#39;dashed&#39;) +
+  ylab(&#39;Expected value of tree&#39;) +
+  theme_minimal()</code></pre>
+<p><img src="/post/2020-05-15-expected-value-ac_files/figure-html/plot_evs-1.png" width="672" /></p>
+<p>The best approach is to bury 10,000 bells in the glowing spot, as it maximizes the expected value of the resutlting bell tree.</p>
+</div>
+<div id="coupon-collectors-problem" class="section level2">
+<h2>Coupon collector’s problem</h2>
+<div id="fossils-and-the-coupon-collection-problem" class="section level3">
+<h3>Fossils and the coupon collection problem</h3>
+</div>
+<div id="jolly-redd-and-the-coupon-collection-problem" class="section level3">
+<h3>Jolly Redd and the coupon collection problem</h3>
+</div>
+</div>
+<div id="permutations-and-combinations" class="section level2">
+<h2>Permutations and combinations</h2>
+</div>

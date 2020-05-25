@@ -1,0 +1,320 @@
+---
+title: "Pre-screen MTurk workers with custom qualifications"
+author: ~
+date: '2017-10-09T15:25:40-05:00'
+slug: qualifications
+categories: ["tutorial"]
+tags: ["AWS", "Python", "Mechanical Turk"]
+description: ~
+summary: "How to set up custom qualification tests to screen MTurk workers."
+publishDate: '2017-10-09T15:25:40-05:00'
+DisableComments: no
+---
+
+
+
+<p>If you do research using MTurk, you may have run into a common issue: how to recruit exclusively workers that meet certain criteria. For instance, you may want to run a study only on colorblind people, or only people who have perfect pitch, or only people who voted in their last local election. These criteria are all pretty easy to ascertain, but you don’t want to wait to ask until the main HIT itself; then you would be paying full price for data you can’t use at all. However, it’s also not fair to let people accept a HIT, ask them the critical question, and then force them to return it if they don’t meet the necessary criteria. That hurts certain worker metrics like HIT completion rate and can affect their ability to access other HITs, through no real fault of their own.</p>
+<p>One option I’ve seen used is a 2-part HIT. First you make a short, cheap HIT in which you ask the relevant question or two, and then you reach out to the eligible workers who completed that HIT with the link to your actual survey. This is complex and can be time consuming for the requester, though, especially if the pre-screen is extremely short.</p>
+<p>It turns out that there is a very straightforward way to deal with this if you’re willing to use the MTurk web API. You can create custom qualifications that workers can request, either directly or by completing a test, and then assign those qualifications as a requirement for your HITs.</p>
+<p>You can get pretty sophisticated with handling these qualifications, and there is a lot more detail on the <a href="http://docs.aws.amazon.com/AWSMechTurk/latest/AWSMechanicalTurkRequester/Concepts_QualificationsArticle.html">AWS documentation pages</a>.</p>
+<p>Here, I’m going to demonstrate how to make a qualification test that auto-scores itself using the boto3 library for Python. It’s a simple, 2-question colorblindness test (you can view it on the worker sandbox <a href="https://workersandbox.mturk.com/qualifications/3CFGE88WF7UDUETM7YP3RSRD73VS4F">here</a>; sign-in required) that first asks people to self-report any known issues with their color vision, and then has them respond to an Ishihara plate. Here’s what it looks like to a worker:</p>
+<div class="figure">
+<img src="/post/images/qualification_test.png" alt="A screenshot from a live qualification test." />
+<p class="caption">A screenshot from a live qualification test.</p>
+</div>
+<p>With this test, instead of asking about colorblindness during the HIT itself and having to throw data out after the fact, I can restrict participation to people who pass this short test.</p>
+<div id="setup" class="section level2">
+<h2>1. Setup</h2>
+<p>To use the MTurk API, a couple of things are neccessary.</p>
+<ul>
+<li><a href="https://aws.amazon.com/free/?sc_channel=PS&amp;sc_campaign=acquisition_US&amp;sc_publisher=google&amp;sc_medium=cloud_computing_hv_b&amp;sc_content=aws_core_e_control_q32016&amp;sc_detail=aws&amp;sc_category=cloud_computing&amp;sc_segment=188908133959&amp;sc_matchtype=e&amp;sc_country=US&amp;s_kwcid=AL!4422!3!188908133959!e!!g!!aws&amp;ef_id=WUMEpQAAAHy41iUB:20171008205604:s">an AWS account</a></li>
+<li><a href="https://www.mturk.com/mturk/welcome">an MTurk requester account</a></li>
+<li><a href="https://requestersandbox.mturk.com/">an MTurk sandbox requester account</a></li>
+<li><a href="https://workersandbox.mturk.com/mturk/">an MTurk sandbox worker account</a></li>
+<li>the <a href="http://boto3.readthedocs.io/en/latest/guide/quickstart.html#installation">boto3 library for Python</a>, most easily installed via <a href="https://pypi.python.org/pypi/pip">pip</a></li>
+</ul>
+<p>You’ll also need to link your AWS account to both your real Requester account and to your Sandbox Requester account, and have your access credentials formatted in a way that boto3 can access them.</p>
+<p>For more detail on how to handle setting all of this up, or to see how all the pieces fit together, you can check out <a href="https://katherinemwood.github.io/post/mturk_dev_intro/">this post</a> for an in-depth guide.</p>
+<p>With that in place, we can move on to actually creating the qualification!</p>
+</div>
+<div id="the-qualification-skeleton" class="section level2">
+<h2>2. The qualification skeleton</h2>
+<p>Making a qualification itself involves just one function call.</p>
+<p>First, we make our client object:</p>
+<pre class="python"><code>import boto3
+
+mturk = boto3.client(&#39;mturk&#39;, 
+                      region_name=&#39;us-east-1&#39;, 
+                      endpoint_url=&#39;https://mturk-requester-sandbox.us-east-1.amazonaws.com&#39;)</code></pre>
+<p>Then, to make a qualification, we call <code>create_qualification_type()</code>:</p>
+<pre class="python"><code>qual_response = mturk.create_qualification_type(
+                        Name=&#39;Color blindness test&#39;,
+                        Keywords=&#39;test, qualification, sample, colorblindness, boto&#39;,
+                        Description=&#39;This is a brief colorblindness test&#39;,
+                        QualificationTypeStatus=&#39;Active&#39;,
+                        Test=questions,
+                        AnswerKey=answers,
+                        TestDurationInSeconds=300)</code></pre>
+<p>No matter what kind of qualification you’re creating, you’ll need to give it a <code>Name</code> and a <code>Description</code> that workers will see, plus some <code>Keywords</code> that will help people search for it. We’re going to go ahead and set this qualification to <code>Active</code> with the <code>QualificationTypeStatus</code> argument, meaning that it will go live immediately (as live as something can go in the sandbox, that is).</p>
+<p>The next handful of arguments are particular to the qualification type this is–in particular, a qualification type that requires a test. The <code>Test</code> argument needs to be a <code>QuestionForm</code> datatype (more on that in a second). This will specify the actual questions that make up the test. If this is left blank, a worker can request the qualification without taking a test first.</p>
+<p>Similarly, the <code>AnswerKey</code> argument must be an <code>AnswerKey</code> data structure. This is like an auto-grader for the test. In this file (more details below), we specify how each answer to each question is scored, and what the scoring scheme is overall (a straight sum, a percent, a range, etc). A person will take the test, and if an answer key is provided, be automatically scored. We can then require that people have a certain score on the qualification test to be able to take your HIT. If no answer key is given, you’ll have to go through the tests manually (and free response answers can’t be auto-graded).</p>
+<p>Because we have a qualification test, we have to specify how long people have to take it in seconds with the <code>TestDurationInSeconds</code> argument. Because this is a short little questionnare, we’ll allot 5 minutes.</p>
+</div>
+<div id="the-question-file" class="section level2">
+<h2>3. The question file</h2>
+<p>Questions have to be passed in a very specific format. They should be <code>.xml</code> files, and they have a specific structure. There’s lots of detail <a href="http://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QuestionFormDataStructureArticle.html">here</a>, and you can get pretty sophisticated in terms of your questions.</p>
+<p>In our case, we have just two questions: a text-only question, and a question in which we present an image.</p>
+<p>The XML file needs to start this way:</p>
+<pre class="python"><code>&lt;QuestionForm xmlns=&#39;http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionForm.xsd&#39;&gt;
+...
+&lt;/QuestionForm&gt;</code></pre>
+<p>This URL is important for technical reasons (it identifies the location of an important file for presenting the questions).</p>
+<p>Inside the <code>QuestionForm</code> tags are sections for each question. You can give it a name and an identifier (important for matching up the answer key):</p>
+<pre class="python"><code>&lt;Question&gt;
+      &lt;QuestionIdentifier&gt;self_report&lt;/QuestionIdentifier&gt;
+      &lt;DisplayName&gt;Q1&lt;/DisplayName&gt;
+      &lt;IsRequired&gt;true&lt;/IsRequired&gt;
+    ...
+&lt;/Question&gt;    </code></pre>
+<p>And then we get to the actual question content. This first question is only text:</p>
+<pre class="python"><code>&lt;QuestionContent&gt;
+        &lt;Text&gt; Which statement best describes your color vision? &lt;/Text&gt;
+&lt;/QuestionContent&gt;</code></pre>
+<p>But we can also present images, videos, and so on. Here’s how we’ll present the Ishihara plate:</p>
+<pre class="python"><code> &lt;QuestionContent&gt;
+        &lt;Text&gt; What number do you see in the image below? &lt;/Text&gt;
+        &lt;Binary&gt;
+          &lt;MimeType&gt;
+            &lt;Type&gt;image&lt;/Type&gt;
+            &lt;SubType&gt;jpg&lt;/SubType&gt;
+          &lt;/MimeType&gt;
+          &lt;DataURL&gt;https://www.spservices.co.uk/images/products/pics/1401209116aw2271.jpg&lt;/DataURL&gt;
+          &lt;AltText&gt;Ishihara Color Plate&lt;/AltText&gt;
+        &lt;/Binary&gt;
+&lt;/QuestionContent&gt;</code></pre>
+<p>Specifying the <code>MimeType</code> within the <code>Binary</code> tags is what allows us to embed other media.</p>
+<p>After every <code>QuestionContent</code> section, you have an <code>AnswerSpecification</code> section. Since we just have radio button responses, we have a <code>SelectionAnswer</code> section, and then for each answer we have a <code>Selection</code> with text the worker sees, and then a secret label for that answer that only we see (and that the answer key will use to grade the worker). Like so:</p>
+<pre class="python"><code>&lt;AnswerSpecification&gt;
+    &lt;SelectionAnswer&gt;
+      &lt;StyleSuggestion&gt;radiobutton&lt;/StyleSuggestion&gt;
+          &lt;Selections&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;rg&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I am red-green colorblind.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;by&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I am blue-yellow colorblind.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;other&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I have some other issue with my color vision.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;norm&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;My color vision is normal.&lt;/Text&gt;
+            &lt;/Selection&gt;
+          &lt;/Selections&gt;
+    &lt;/SelectionAnswer&gt;
+&lt;/AnswerSpecification&gt;</code></pre>
+<p>This gets defined for each question.</p>
+<p>Here’s what that entire file, all put together, looks like:</p>
+<pre class="python"><code>&lt;QuestionForm xmlns=&#39;http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionForm.xsd&#39;&gt;  
+  &lt;Question&gt;
+      &lt;QuestionIdentifier&gt;self_report&lt;/QuestionIdentifier&gt;
+      &lt;DisplayName&gt;Q1&lt;/DisplayName&gt;
+      &lt;IsRequired&gt;true&lt;/IsRequired&gt;
+      &lt;QuestionContent&gt;
+        &lt;Text&gt; Which statement best describes your color vision? &lt;/Text&gt;
+      &lt;/QuestionContent&gt;
+      &lt;AnswerSpecification&gt;
+        &lt;SelectionAnswer&gt;
+          &lt;StyleSuggestion&gt;radiobutton&lt;/StyleSuggestion&gt;
+          &lt;Selections&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;rg&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I am red-green colorblind.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;by&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I am blue-yellow colorblind.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;other&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I have some other issue with my color vision.&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;norm&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;My color vision is normal.&lt;/Text&gt;
+            &lt;/Selection&gt;
+          &lt;/Selections&gt;
+        &lt;/SelectionAnswer&gt;
+      &lt;/AnswerSpecification&gt;
+  &lt;/Question&gt;
+  &lt;Question&gt;
+      &lt;QuestionIdentifier&gt;ishihara_39&lt;/QuestionIdentifier&gt;
+      &lt;DisplayName&gt;Q2&lt;/DisplayName&gt;
+      &lt;IsRequired&gt;true&lt;/IsRequired&gt;
+      &lt;QuestionContent&gt;
+        &lt;Text&gt; What number do you see in the image below? &lt;/Text&gt;
+        &lt;Binary&gt;
+          &lt;MimeType&gt;
+            &lt;Type&gt;image&lt;/Type&gt;
+            &lt;SubType&gt;jpg&lt;/SubType&gt;
+          &lt;/MimeType&gt;
+          &lt;DataURL&gt;https://www.spservices.co.uk/images/products/pics/1401209116aw2271.jpg&lt;/DataURL&gt;
+          &lt;AltText&gt;Ishihara Color Plate&lt;/AltText&gt;
+        &lt;/Binary&gt;
+      &lt;/QuestionContent&gt;
+      &lt;AnswerSpecification&gt;
+        &lt;SelectionAnswer&gt;
+          &lt;StyleSuggestion&gt;radiobutton&lt;/StyleSuggestion&gt;
+          &lt;Selections&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;122&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;122&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;74&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;74&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;21&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;21&lt;/Text&gt;
+            &lt;/Selection&gt;
+            &lt;Selection&gt;
+              &lt;SelectionIdentifier&gt;none&lt;/SelectionIdentifier&gt;
+              &lt;Text&gt;I don&#39;t see a number.&lt;/Text&gt;
+            &lt;/Selection&gt;
+          &lt;/Selections&gt;
+        &lt;/SelectionAnswer&gt;
+      &lt;/AnswerSpecification&gt;
+  &lt;/Question&gt;
+&lt;/QuestionForm&gt;</code></pre>
+</div>
+<div id="the-answer-key" class="section level2">
+<h2>4. The answer key</h2>
+<p>The answer key looks much the same as the question form. Starts in a similar way:</p>
+<pre class="python"><code>&lt;AnswerKey xmlns=&quot;http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/AnswerKey.xsd&quot;&gt;
+  ...
+&lt;/AnswerKey&gt;</code></pre>
+<p>It also has a <code>Question</code> section for each question you asked on the test. Within that, you list out the score you want associated with each answer given on the test. For example, for the first question, we want to assign a point only to the answer “my color vision is normal.”</p>
+<pre class="python"><code>&lt;Question&gt;
+  &lt;QuestionIdentifier&gt;self_report&lt;/QuestionIdentifier&gt;
+  &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;rg&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;by&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;other&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;norm&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;1&lt;/AnswerScore&gt;
+  &lt;/AnswerOption&gt;
+&lt;/Question&gt;</code></pre>
+<p>Answer values can be anything you like, according to any scoring scheme. They can also be negative!</p>
+<p>After you’re done listing out all of the questions, you need to tell MTurk how to calculate the final score with a <code>QualificationValueMapping</code> section. There is a lot more detail <a href="http://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_AnswerKeyDataStructureArticle.html">here</a>. We’re not going to do anything fancy: just a percentage conversion. We specify a <code>PercentageMapping</code> and give it the max score to calculate relative to, like so:</p>
+<pre class="python"><code>&lt;QualificationValueMapping&gt;
+  &lt;PercentageMapping&gt;
+    &lt;MaximumSummedScore&gt;2&lt;/MaximumSummedScore&gt;
+  &lt;/PercentageMapping&gt;
+&lt;/QualificationValueMapping&gt;</code></pre>
+<p>And here’s what the entire file looks like, strung together:</p>
+<pre class="python"><code>&lt;AnswerKey xmlns=&quot;http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/AnswerKey.xsd&quot;&gt;
+  &lt;Question&gt;
+    &lt;QuestionIdentifier&gt;self_report&lt;/QuestionIdentifier&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;rg&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;by&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;other&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;norm&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;1&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+  &lt;/Question&gt;
+  &lt;Question&gt;
+    &lt;QuestionIdentifier&gt;ishihara_39&lt;/QuestionIdentifier&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;122&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;21&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;none&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;0&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+    &lt;AnswerOption&gt;
+      &lt;SelectionIdentifier&gt;74&lt;/SelectionIdentifier&gt;
+      &lt;AnswerScore&gt;1&lt;/AnswerScore&gt;
+    &lt;/AnswerOption&gt;
+  &lt;/Question&gt;
+  &lt;QualificationValueMapping&gt;
+    &lt;PercentageMapping&gt;
+      &lt;MaximumSummedScore&gt;2&lt;/MaximumSummedScore&gt;
+    &lt;/PercentageMapping&gt;
+  &lt;/QualificationValueMapping&gt;
+&lt;/AnswerKey&gt;</code></pre>
+<p>Now that we have these two files, we load them in. We can do this by adding two lines like this at the top of the script that actually makes the qualification:</p>
+<pre class="python"><code>questions = open(name=&#39;color_qs.xml&#39;, mode=&#39;r&#39;).read()
+answers = open(name=&#39;color_ans_key.xml&#39;, mode=&#39;r&#39;).read()</code></pre>
+<p>This reads these files in and assigns their contents to these variables. We then pass these variables into our <code>create_qualification_type</code> function call as arguments to <code>Test</code> and <code>AnswerKey</code>.</p>
+</div>
+<div id="using-qualifications-in-a-hit" class="section level2">
+<h2>5. Using qualifications in a HIT</h2>
+<p>So here’s the entire script. Once this script is run, the qualification exists permanently in an active state (unless it’s deleted).</p>
+<pre class="python"><code>import boto3
+
+questions = open(name=&#39;color_qs.xml&#39;, mode=&#39;r&#39;).read()
+answers = open(name=&#39;color_ans_key.xml&#39;, mode=&#39;r&#39;).read()
+
+mturk = boto3.client(&#39;mturk&#39;, 
+                      region_name=&#39;us-east-1&#39;, 
+                      endpoint_url=&#39;https://mturk-requester-sandbox.us-east-1.amazonaws.com&#39;)
+
+qual_response = mturk.create_qualification_type(
+                        Name=&#39;Color blindness test&#39;,
+                        Keywords=&#39;test, qualification, sample, colorblindness, boto&#39;,
+                        Description=&#39;This is a brief colorblindness test&#39;,
+                        QualificationTypeStatus=&#39;Active&#39;,
+                        Test=questions,
+                        AnswerKey=answers,
+                        TestDurationInSeconds=300)
+
+print(qual_response[&#39;QualificationType&#39;][&#39;QualificationTypeId&#39;])</code></pre>
+<p>It’s important to make a note of the qualification’s unique ID, which is why I print it upon creation (you can also look it up on the MTurk website itself in the URL of the qualification), as this is how we’ll refer to it when we create a HIT that requires this qualification.</p>
+<p>Here’s what that looks like:</p>
+<pre class="python"><code>hit = client.create_hit(
+        Reward=&#39;0.01&#39;,
+        LifetimeInSeconds=3600,
+        AssignmentDurationInSeconds=600,
+        MaxAssignments=9,
+        Title=&#39;A HIT with a qualification test&#39;,
+        Description=&#39;A test HIT that requires a certain score from a qualification test to accept.&#39;,
+        Keywords=&#39;boto, qualification, test&#39;,
+        AutoApprovalDelayInSeconds=0,
+        QualificationRequirements=[{&#39;QualificationTypeId&#39;:&#39;3CFGE88WF7UDUETM7YP3RSRD73VS4F&#39;,
+                                   &#39;Comparator&#39;: &#39;EqualTo&#39;,
+                                   &#39;IntegerValues&#39;:[100]}]
+        )</code></pre>
+<p>Looking at the <code>QualificationRequirements</code> argument in particular, we can see how this is structured. You pass a list of dictionaries as an argument, with each qualification getting its own dictionary. You can have lots (a location requirement, a minimum HIT approval rating, a minimum number of completed HITs, and so on), but in this case we just have the one. The dictionary has three entries: the qualification type ID, a comparator, and then an integer. These last two tell MTurk how to examine the score to determine if someone is qualified. In our case, we only want to accept workers who had a score exactly equal to 100% (meaning that they did not self-report any vision problems and answered the Ishihara plate correctly), but you could also ask for a score <code>GreaterThan</code> some minimum value, for example.</p>
+<hr />
+<p>These custom qualifications work really well if they can be automatically scored, and if it’s only a question or two long. It’s not fair to require a long, unpaid test to complete your HIT, unless passing the test would grant them access to multiple, well-paying HITs. For most purposes, a very brief prescreen is all you’ll need.</p>
+<p>This simplifies the process on both sides–workers can quickly get qualified (or not, in which case they can filter those HITs from their options, uncluttering their feeds), and from the requester side, this process is completely automatic. You’ll exclude less data, and won’t have to bother dealing with two separate HITs, invited-only hits, or “bonuses” that are actually payment for the real HIT you want data for.</p>
+</div>

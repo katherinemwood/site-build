@@ -1,0 +1,63 @@
+---
+title: "CORVIDS 2.0: Faster, more stable, and now on Windows"
+author: ~
+date: '2018-05-08T10:04:53-05:00'
+slug: corvids-2.0
+categories: ["programming", "reproducibility", "statistics"]
+tags: ["Python", "programming", "reproducibility", "statistics"]
+description: ~
+summary: "We introduce some major improvements."
+publishDate: '2018-05-08T10:04:53-05:00'
+DisableComments: no
+---
+
+Some exciting CORVIDS news--we made some *major* improvements to how things work, and we've released a brand new version! We now also have a standalone for Windows users, so no more wrestling with dependencies.
+
+If you want details on what's changed, read on. If you just want the good stuff, head over to the [latest release.](https://github.com/katherinemwood/corvids/releases/tag/v2.0.0)
+
+#What's new:
+
+##SPEEEEEEEED
+We used some mathematical properties of variances to vastly speed up solving time a factor of $2n^2$, where $n$ is the number of subjects/samples (details are in the [updated preprint](https://osf.io/rvgqk/) for the curious). Now the program will only check at valid variances, and it won't waste any time checking variances that are impossible. This cuts the number of pairs it has to search way down, and you no longer have to be gun-shy about how much tolerance you set. Even large tolerances will only add a constrained number of possible variances (dependent on scale and sample size).
+
+Here's a comparison of the old CORVIDS searching with large tolerance vs. the new CORVIDS, with a scale of 1-7 and a sample size of 10.
+
+Before:
+
+![](/post/images/corvids1.0_small_scale.png)
+
+That's a *lot* of combinations to search through (it is too many). CORVIDS would dismiss bad pairs pretty quickly, but it all added up to a lot of waiting time.
+
+After:
+
+![](/post/images/corvids2.0_small_scale.png)
+
+That's a lot fewer combinations, and it translates to way more speed. It also works at scales and sample sizes of any magnitude, so you no longer have to be nervous about adding tolerance to big scales and/or samples.
+
+Old CORVIDS starts a long journey for n=50 and scale of 1-10:
+
+![](/post/images/corvids1.0_big_scale.png)
+
+Yikes. That's, shall we say, less than ideal.
+
+But new CORVIDS cuts right to the chase:
+
+![](/post/images/corvids2.0_big_scale.png)
+
+Much better.
+
+We're thrilled we were able to speed things up so much, and we hope it improves your experience using the program.
+
+##Find First
+
+If you're only interested in whether numbers are possible and don't care about getting the full solution space, we have a `Stop After First Solution` option. We revamped how it works, making it faster. It also now returns solutions at multiple means/variances, if they exist.
+
+##Windows standalone
+CORVIDS has a handful of dependencies that can be difficult to get working in harmony. Mac users always had the option of the standalone app, and now Windows users do too. Thanks for your patience, Windows users!
+
+We recommend using the standalone apps for routine applications. Unless you're doing something ambitious or need programmatic access to the tool, the standalone app will give you all of the functionality with none of the pain. If you've struggled to get things working, we hope the standalone builds solve your problems.
+
+We also did some minor UI adjustments and bug fixes, some of them fairly substantial. You can view the changelog on the release page.
+
+If you notice any bugs or problems, feel free to email us or submit an issue on Github. Thanks to James Heathers, Nick Brown, and Jordan Anaya for their feedback and input as we've been making improvements.
+

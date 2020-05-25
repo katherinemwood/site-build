@@ -1,0 +1,363 @@
+---
+title: "Intro to R Notebooks"
+author: ~
+date: '2017-06-26T15:36:22-05:00'
+slug: R-notebooks
+categories: ["R"]
+tags: ["R", "R Notebooks"]
+description: ~
+summary: "Combine executable code, math formatting, and nice markdown in one easy place."
+publishDate: '2017-06-26T15:36:22-05:00'
+DisableComments: no
+---
+
+
+
+<p>This notebook is based loosely on <a href="https://www.rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf">this cheatsheet</a> that shows some of the most basic functionality of R notebooks, including code, markdown, and Latex.</p>
+<div id="code" class="section level1">
+<h1>Code</h1>
+<div id="chunks" class="section level2">
+<h2>Chunks</h2>
+<p>You can imbed chunks of R code right into the notebooks and run them. Why not beat that long-dead horse of demo data, the iris dataset?</p>
+<pre class="r"><code>head(iris)</code></pre>
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+## 4          4.6         3.1          1.5         0.2  setosa
+## 5          5.0         3.6          1.4         0.2  setosa
+## 6          5.4         3.9          1.7         0.4  setosa</code></pre>
+<p>If you print a dataframe, it automatically gets formatted in this nice way.</p>
+<p>We can also look at the summary:</p>
+<pre class="r"><code>summary(iris)</code></pre>
+<pre><code>##   Sepal.Length    Sepal.Width     Petal.Length    Petal.Width   
+##  Min.   :4.300   Min.   :2.000   Min.   :1.000   Min.   :0.100  
+##  1st Qu.:5.100   1st Qu.:2.800   1st Qu.:1.600   1st Qu.:0.300  
+##  Median :5.800   Median :3.000   Median :4.350   Median :1.300  
+##  Mean   :5.843   Mean   :3.057   Mean   :3.758   Mean   :1.199  
+##  3rd Qu.:6.400   3rd Qu.:3.300   3rd Qu.:5.100   3rd Qu.:1.800  
+##  Max.   :7.900   Max.   :4.400   Max.   :6.900   Max.   :2.500  
+##        Species  
+##  setosa    :50  
+##  versicolor:50  
+##  virginica :50  
+##                 
+##                 
+## </code></pre>
+<p>And of course, you can use whatever libraries you like, as usual. We can set an option in this chunk to disable the messages that print to the console when you do things like load libraries. We could also turn off warnings, set options for error handling, or specify how we want results and code interleaved, or if we want the code in the output document at all. Setting the <code>tidy</code> argument to <code>TRUE</code> also spiffs up your code for you (cleaning up multiline expressions with indenting, for instance) in the output. So customizable!</p>
+<pre class="r"><code>library(dplyr)
+(meanpetals &lt;- group_by(iris, Species) %&gt;%
+               summarize(length = mean(Petal.Length), width = mean(Petal.Width)))</code></pre>
+<pre><code>## # A tibble: 3 x 3
+##   Species    length width
+##   &lt;fct&gt;       &lt;dbl&gt; &lt;dbl&gt;
+## 1 setosa       1.46 0.246
+## 2 versicolor   4.26 1.33 
+## 3 virginica    5.55 2.03</code></pre>
+<p>Boring old data demos never looked so fresh!</p>
+</div>
+<div id="inline" class="section level2">
+<h2>Inline</h2>
+<p>Inline code executes invisibly, so all you see is the output. For example, I can run a function right here and now to get the weekday:</p>
+<p>Today is a Monday.</p>
+<p>That was accomplished by simply adding a back-ticked <code>r</code> prefix to a call to <code>weekdays(Sys.time())</code>.</p>
+<p>You can also set global parameters in the header and reference them throughout the document.</p>
+<p>This inline execution has various uses. If you need code primarily for its output, like getting the current date or weekday and adding it into text, then inline works really well and better than a chunk.</p>
+</div>
+</div>
+<div id="displaying-data" class="section level1">
+<h1>Displaying Data</h1>
+<p>If you’re writing up a tutorial or a report on results, you’ll more likely than not need to display data in the form of plots and tables. This is super easy in R Notebooks, and there are lots of options.</p>
+<div id="plots" class="section level2">
+<h2>Plots</h2>
+<p>Let’s see what the sepal lengths in Iris are up to by species, just for kicks. I’ll do some more extensive data manipulation in a code chunk, just to show we can. Since I loaded dplyr in another code chunk further up, we’re good there.</p>
+<pre class="r"><code>library(ggplot2)
+iris_plot &lt;- ggplot(data=select(iris, Species, Sepal.Length), 
+                    aes(x=Species, y=Sepal.Length, color=Species, fill=Species)) +
+  geom_violin(alpha=.1) +
+  geom_point(position=position_jitter(w=.2)) +
+  geom_crossbar(stat=&#39;summary&#39;,fun.y=mean, fun.ymax=mean, fun.ymin=mean, fatten=2, width=.5) +
+  theme_minimal()
+print(iris_plot)</code></pre>
+<p><img src="/post/notebooks_files/figure-html/iris_scatter-1.png" width="672" /></p>
+<p>Fascinating, I guess!</p>
+<p>The nice thing about this is that these plots are completely reproduceable–they’ll be generated everytime you run the notebook. You can keep the code cell that generates it in the output, so people can see it, or if you want a cleaner output with just the results, you can hide the generating code cell. You can tailor it to your options.</p>
+</div>
+<div id="tables" class="section level2">
+<h2>Tables</h2>
+<p>Tables can be a real pain-point when doing manuscripts, but these can be automated in R Notebooks, rendered right into text, and some look pretty good. Here’s what <code>knitr</code> will give you (it won’t look right until it’s rendered):</p>
+<pre class="r"><code>knitr::kable(meanpetals)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Species</th>
+<th align="right">length</th>
+<th align="right">width</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">setosa</td>
+<td align="right">1.462</td>
+<td align="right">0.246</td>
+</tr>
+<tr class="even">
+<td align="left">versicolor</td>
+<td align="right">4.260</td>
+<td align="right">1.326</td>
+</tr>
+<tr class="odd">
+<td align="left">virginica</td>
+<td align="right">5.552</td>
+<td align="right">2.026</td>
+</tr>
+</tbody>
+</table>
+<p>That looks alright!</p>
+<p>There’s also <code>xtable,</code> which will make it easier to set the appearance of the table through HTML attributes. This won’t show up until it’s rendered, though.</p>
+<pre class="r"><code>print(xtable::xtable(meanpetals), type=&#39;html&#39;, html.table.attributes=&#39;border=0  width=250&#39;)</code></pre>
+<!-- html table generated in R 3.6.1 by xtable 1.8-4 package -->
+<!-- Mon May 25 11:57:21 2020 -->
+<table border="0" width="250">
+<tr>
+<th>
+</th>
+<th>
+Species
+</th>
+<th>
+length
+</th>
+<th>
+width
+</th>
+</tr>
+<tr>
+<td align="right">
+1
+</td>
+<td>
+setosa
+</td>
+<td align="right">
+1.46
+</td>
+<td align="right">
+0.25
+</td>
+</tr>
+<tr>
+<td align="right">
+2
+</td>
+<td>
+versicolor
+</td>
+<td align="right">
+4.26
+</td>
+<td align="right">
+1.33
+</td>
+</tr>
+<tr>
+<td align="right">
+3
+</td>
+<td>
+virginica
+</td>
+<td align="right">
+5.55
+</td>
+<td align="right">
+2.03
+</td>
+</tr>
+</table>
+<p>Finally, here’s a table fron the <code>stargazer</code> package. Also lots of attributes we can set here. It’s designed mostly for pretty formatting of regression model results and summary stats, but we can get it to do direct output instead.</p>
+<pre class="r"><code>stargazer::stargazer(as.data.frame(meanpetals), type=&#39;html&#39;, summary=F)</code></pre>
+<table style="text-align:center">
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+Species
+</td>
+<td>
+length
+</td>
+<td>
+width
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+1
+</td>
+<td>
+setosa
+</td>
+<td>
+1.462
+</td>
+<td>
+0.246
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+2
+</td>
+<td>
+versicolor
+</td>
+<td>
+4.260
+</td>
+<td>
+1.326
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+3
+</td>
+<td>
+virginica
+</td>
+<td>
+5.552
+</td>
+<td>
+2.026
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+</table>
+<p>If none of the formatting is quite to your liking, or you don’t have easily available options to set, you can tweak the appearance with your <a href="http://rmarkdown.rstudio.com/html_document_format.html#custom_css">own CSS</a>.</p>
+<p>If none of this is satisfying, or it’s more informal, you can always just print the dataframe.</p>
+<pre class="r"><code>(meanpetals)</code></pre>
+<pre><code>## # A tibble: 3 x 3
+##   Species    length width
+##   &lt;fct&gt;       &lt;dbl&gt; &lt;dbl&gt;
+## 1 setosa       1.46 0.246
+## 2 versicolor   4.26 1.33 
+## 3 virginica    5.55 2.03</code></pre>
+<p>I don’t know that this makes tables any less painless, but at least now there’s more than one option for the pain.</p>
+</div>
+</div>
+<div id="formatting" class="section level1">
+<h1>Formatting</h1>
+<p>If you’re writing up a report or manuscript, you also need your text to look nice, not just your data. This is where knowing a little bit of Markdown comes in handy.</p>
+<div id="markdown" class="section level2">
+<h2>Markdown</h2>
+<p>Just type to get pretty plaintext. To quote <code>verbatim code</code> without running anything, wrap it in backticks(`). This is distinct from inline code, which is prefaced with <code>r</code> within the ticks. I’ll do this throughout to demonstrate how to construct the effects you see.</p>
+<p>To display a special character, like _underscores_ or asterisks *, escape them with a backslash (\).</p>
+<p>To add a single linebreak without a blank line, end a line with two spaces.<code>..</code><br />
+Ta-da!</p>
+<p><code>*italics*</code>: <em>italics</em><br />
+<code>**bold**</code>: <strong>bold</strong><br />
+<code>**_both_**</code>: <strong><em>both</em></strong><br />
+<code>~~strikethrough~~</code>: <del>strikethrough</del><br />
+<code>subscript~1~</code>: subscript<sub>1</sub><br />
+<code>superscript^2^</code>: superscript<sup>2</sup></p>
+<p>You can do bulleted lists:</p>
+<p><code>* start with an asterisk, plus, or minus</code> <code>+ then indent 4 spaces</code> <code>- then indent again</code> <code>* then more stuff</code></p>
+<ul>
+<li>start with an asterisk, plus, or minus
+<ul>
+<li>then indent 4 spaces
+<ul>
+<li>then indent again</li>
+</ul></li>
+</ul></li>
+<li>then more stuff</li>
+</ul>
+<p>And ordered ones:</p>
+<p><code>1. Big thing</code> <code>i) small thing \+ indent</code> <code>A. sub-small thing</code> <code>2. Another big thing</code></p>
+<ol style="list-style-type: decimal">
+<li>Big thing
+<ol style="list-style-type: lower-roman">
+<li>small thing + indent<br />
+A. sub-small thing</li>
+</ol></li>
+<li>Another big thing</li>
+</ol>
+<p>Oh, and footnotes… <code>[^1]</code> <a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<p><code>#Header 1</code></p>
+</div>
+</div>
+<div id="header-1" class="section level1">
+<h1>Header 1</h1>
+<p><code>##Header 2</code></p>
+<div id="header-2" class="section level2">
+<h2>Header 2</h2>
+<p><code>###Header 3</code></p>
+<div id="header-3" class="section level3">
+<h3>Header 3</h3>
+<p>Add horizontal lines with at least three hyphens, asterisks, or underscores:</p>
+<p><code>***</code></p>
+<hr />
+<p>Tables are a little strange in the raw, but look nice once rendered.</p>
+<pre><code>| Right-aligned | Left-aligned | Centered | Default |
+|-:|:-|:-:|-|
+|1|1|1|1|
+|12|12|12|12| 
+|*1*|_2_|~~3~~|4^2^|</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Right-aligned</th>
+<th align="left">Left-aligned</th>
+<th align="center">Centered</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">1</td>
+<td align="center">1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td align="right">12</td>
+<td align="left">12</td>
+<td align="center">12</td>
+<td>12</td>
+</tr>
+<tr class="odd">
+<td align="right"><em>1</em></td>
+<td align="left"><em>2</em></td>
+<td align="center"><del>3</del></td>
+<td>4<sup>2</sup></td>
+</tr>
+</tbody>
+</table>
+<p>Images are easy, too.<br />
+<code>![The adorabilis octopus, for your viewing pleasure](http://blogs.discovermagazine.com/d-brief/files/2015/06/octopus.jpg)</code></p>
+<div class="figure">
+<img src="http://blogs.discovermagazine.com/d-brief/files/2015/06/octopus.jpg" alt="The adorabilis octopus, for your viewing pleasure" />
+<p class="caption">The adorabilis octopus, for your viewing pleasure</p>
+</div>
+</div>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><code>[^1]:</code> Are pretty easy.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>

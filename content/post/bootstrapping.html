@@ -1,0 +1,87 @@
+---
+title: "Intro to Bootstrapping"
+author: ~
+date: '2017-06-26T15:02:58-05:00'
+slug: bootstrapping
+categories: ["R", "statistics"]
+tags: ["R", "statistics", "simulation", "bootstrapping"]
+description: ~
+publishDate: '2017-06-26T15:02:58-05:00'
+summary: "Bootstrapping is a powerful and intuitive technique."
+DisableComments: no
+---
+
+
+
+<p>The bootstrap, detailed by Efron and Tibshirani in their 1993 book <em>An Introduction to the Bootstrap,</em> is a powerful, flexible statistical concept based on the idea of “pulling yourself up by your bootstraps.” With today’s computing power, it’s easier than ever to apply and use. It also happens to be one of my favorite statistical tricks because of the elegance of the underlying logic.</p>
+<p>The idea behind the bootstrap is simple. We know that if we repeatedly sample groups from the population, our measurement of that population will get increasingly accurate, becoming perfect when we’ve sampled every member of the population (and thus obviating the need for statistics at all). However, this world, like worlds without friction in physics, don’t resemble operating conditions. In the real world, you typically get one sample from your population. If only we could easily resample from the population a few more times.</p>
+<p>Bootstrapping gets you the next best thing. We don’t resample from the population. Instead, we continuously resample <em>our own data</em>,with replacement, and generate a so-called bootstrapped distribution. We can then use this distribution to quantify uncertainty on all kinds of measures.</p>
+<p>I’ll work through an example to show how this works in practice. We’ll sample from the normal to start, <span class="math inline">\(\mu = 1.25\)</span>, <span class="math inline">\(\sigma = 0.5\)</span>. I’ve set the seed within the script so you’ll get exactly the results I find here.</p>
+<p>Let’s say we run a study with 50 people, and we’re interested in, among other things, getting a good estimation of the mean of the underlying population. So, you take your 50 people, take a mean, get a standard error, and maybe 95% confidence intervals to show the variation (± 1.96*SE).</p>
+<pre class="r"><code>library(effsize)</code></pre>
+<pre><code>## Warning: package &#39;effsize&#39; was built under R version 3.6.2</code></pre>
+<pre class="r"><code>#Set the seed for reproducable results
+set.seed(123)
+#Generate some random normal data
+x &lt;- rnorm(50, 1.25, .5)
+mean(x)</code></pre>
+<pre><code>## [1] 1.267202</code></pre>
+<pre class="r"><code>sd(x)</code></pre>
+<pre><code>## [1] 0.462935</code></pre>
+<pre class="r"><code>#Calculate the SE the old fashioned way
+se &lt;- sd(x)/sqrt(50)
+#Get 95% CIs with the formula
+lb_se &lt;- mean(x) - 1.96*se
+ub_se &lt;- mean(x) + 1.96*se</code></pre>
+<p>[Just to note: bootstrapped confidence intervals give you a nice measure of uncertainty, and I like to use them as my error bars, but they don’t get you away from the problems of NHST, if that’s something you’re trying to avoid.]</p>
+<p>Here’s a histogram of our sample. In this post, I’m plotting everything in base just for the thrill:</p>
+<pre class="r"><code>hist(x,  breaks=10)</code></pre>
+<p><img src="/post/bootstrapping_files/figure-html/plot_sample-1.png" width="672" /></p>
+<p>Here are the stats for our mean, calculated the old-fashioned way from an n of 50:</p>
+<p>mean: 1.27<br />
+SE: 0.18<br />
+95% CI: [1.14, 1.40]</p>
+<p>Now, let’s bootstrap this mean. A way to conceptualize this is to imagine re-running your 50-person experiment over and over again, except we’re not going to be drawing new subjects from the population. Instead, we’re going to draw groups of 50 subjects from our <em>sample,</em> but do so with replacement. This means that some subjects may show up more than once, and some may never show up at all. We’ll take the mean of each group. We’ll do this many times–here, 1000–and so we end up with a distribution of 1000 means.</p>
+<p>For this basic procedure, we can do it in just one line:</p>
+<pre class="r"><code>boot &lt;- replicate(1000, mean(sample(x, 50, replace=TRUE)))</code></pre>
+<p>And here’s the resulting histogram:</p>
+<pre class="r"><code>lb &lt;- sort(boot)[.025*1000]
+ub &lt;- sort(boot)[.975*1000]
+#Plot a histogram of the bootstrapped distribution, the
+#mean, and the 95% bootstrapped CI
+hist(boot, breaks=50)
+abline(v=c(mean(boot), lb, ub), col=rep(&#39;red&#39;, 3), lty=c(1, 2, 2))</code></pre>
+<p><img src="/post/bootstrapping_files/figure-html/boot_hist_mean-1.png" width="672" /></p>
+<p>The bootstrapped mean (1.27) is of course centered on our sample mean. Now we have a distribution of values for the mean that we could expect to obtain with our sample.</p>
+<p>Now, if we wanted to do confidence intervals, we could get the SE of the bootstrapped distribution and do it the usual way. However, we also have an option available to us called the <em>percentile method.</em> In order to find the confidence intervals, we sort all of our bootstrapped values, and then take the 2.5% quantile and the 97.5% quantile. If you repeat the sampling procedure with the same process on the same population (precisely what we do with our bootstrap), 95% of the time the mean falls between these endpoints. If we do this procedure with our particular sample, we get this:</p>
+<p>95% bootstrapped CI: [1.14, 1.40]</p>
+<p>Here, the bootstrapped CI and the standard-error derived CI match up (not that surprising, since our data is normally distributed and therefore exceptionally well-behaved!). However, if you have constrained data, such as accuracy, bootstrapped confidence intervals will automatically conform to those limits and won’t exceed 100% or dip below 0%.</p>
+<p>Here’s an example of bootstrapping the estimate of the effect size. We’re going to assume a between-subjects design here. We’ll make two independent, normally distributed groups with a true effect of .5. I’m going to let the <code>cohen.d</code> function from the effsize package do the heavy lifting and give me both the estimate and the confidence interval:</p>
+<pre class="r"><code>groups &lt;- data.frame(&#39;exp&#39;=rnorm(50, .5, 1), &#39;control&#39;=rnorm(50))
+(es &lt;- cohen.d(groups$exp, groups$control))</code></pre>
+<pre><code>## 
+## Cohen&#39;s d
+## 
+## d estimate: 0.6359746 (medium)
+## 95 percent confidence interval:
+##     lower     upper 
+## 0.2291717 1.0427774</code></pre>
+<p>Here’s how we would bootstrap those same intervals. We resample each group independently, because it’s between-subjects. The procedure is much the same if it’s within subjects, except you would resample your <em>pairs</em> of data because the two groups are not independent in that case. The code:</p>
+<pre class="r"><code>boot_es &lt;- replicate(1000, cohen.d(sample(groups$exp, 50, replace=TRUE), 
+                                   sample(groups$control, 50, replace=TRUE))$estimate)</code></pre>
+<p>And here’s the histogram of the bootstrapped distribution, with the mean and bootstrapped CI plotted:</p>
+<pre class="r"><code>lb_es &lt;- sort(boot_es)[.025*1000]
+ub_es &lt;- sort(boot_es)[.975*1000]
+hist(boot_es, breaks=50)
+abline(v=c(mean(boot_es), lb_es, ub_es), col=rep(&#39;red&#39;, 3), lty=c(1, 2, 2))</code></pre>
+<p><img src="/post/bootstrapping_files/figure-html/plot_boot_es-1.png" width="672" /></p>
+<p>bootstrapped mean: .56<br />
+95% bootstrapped CI: [.14, .99]</p>
+<p>And there you have it: bootstrapped confidence intervals on your effect sizes.</p>
+<p>There is an <a href="https://en.wikipedia.org/wiki/Bootstrapping_(statistics)">incredible amout of nuance</a> in the bootstrap method, and many different ways to apply it to even the most complex data. You can use it for something as simple as confidence intervals on a mean, or as complicated as regression coefficients. It’s also great for getting CI estimates for statistics or measures that don’t have a formula method. The general idea–resample your own data to get estimates–underlies even the most complex applications of this method. If you understand the basic logic, it’s pretty easy to understand and start using new applications.</p>
+<p>If you are mathematically inclined, there have been many proofs and a lot of work showing the first- and second-order correctness of bootstrapping estimations. The method I showed here for confidence intervals is just the percentile method; although it has been shown to work well in a wide variety of situations, there are other approaches, some which offer bias correction and other improvements (<a href="http://www-rohan.sdsu.edu/~babailey/stat672/BCa.pdf">for example</a>).</p>
+<p>If you want to get started, there are some R packages that will handle bootstrapping for you:</p>
+<p><a href="https://cran.r-project.org/web/packages/boot/boot.pdf">boot</a> (general-purpose, and can generate many variants of the various methods)<br />
+<a href="https://cran.r-project.org/web/packages/bootES/bootES.pdf">bootES</a> (for effect sizes in particular)</p>
+<p>And of course, if you want a really deep dive, you can check out the original book:</p>
+<p>Efron &amp; Tibshirani, <em>An Introduction to the Bootstrap.</em> Chapman &amp; Hall/CRC, 1993.</p>

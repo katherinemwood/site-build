@@ -1,0 +1,47 @@
+---
+title: gams
+author: ~
+date: '2020-05-21'
+slug: gams
+categories: []
+tags: []
+description: ~
+publishDate: '2020-05-21T09:59:14-07:00'
+DisableComments: no
+draft: true
+---
+
+Linear regression models the dependent variable as a linear combination of the predictor variables, with the weights on these predictors being the coefficients
+
+These are obtained via maximum likelihood estimation
+
+$y =\sum^{p}_{1}\beta_iX_i$ for $X_1, X_2, ..., X_p$
+
+GLMs, or generalized linear models, employ a link function that transforms the values of the predictors. 
+
+
+GAMs, generalized additive models, use the form
+
+$$y = s_0 + \sum^{p}_{i = 1} s_i(X_i)$$
+
+So instead of a linear combination of weights, the outcome variable is the sum of many smooth univariate functions of the predictors. This smoother can be something like the running lines smoother, a kernel smoother, or a spline smoother. These smoothers are allowed to be non-parametric, meaning that rather than a set of parameters determining the shape of the function in the way that the mean and standard deviation control the shape of a Gaussian, the shape is determined by the data itself. 
+
+
+Linear models extremely interpretable, but can often be biased if some relationships are not linear. If you want to capture those relationships (U-shapes, S-shapes, etc), usually you have to add higher order polynomial terms (Bxi + Bxi^2) or take other steps.
+
+Super flexible models can be "black box," like deep neural networks, and difficult if not impossible to interpret (particularly as pertains to the impact of individual features)
+
+Because GAMs are additive, the marginal effect of a predictor is independent of all other predictors. This means that we can say, "holding all other things constant, this is the impact of Y as Xi changes."
+
+Smoother functions can be regularized to prevent overfitting
+
+
+I want to get my hands dirty and explore these a little more.  I'm going to fit both a classic linear regression and a GAM, and go really in-depth into the differences and how the estimated effects of each predictor change under the two different model formulations.
+
+
+# References:
+
+[Hastie & Tibshirani paper](https://projecteuclid.org/download/pdf_1/euclid.ss/1177013604)
+[StitchFix Blog](https://multithreaded.stitchfix.com/blog/2015/07/30/gam/)
+[Ian Shen's Medium post](https://medium.com/just-another-data-scientist/building-interpretable-models-with-generalized-additive-models-in-python-c4404eaf5515)
+[Pablo Oberhauser's Medium post](https://codeburst.io/pygam-getting-started-with-generalized-additive-models-in-python-457df5b4705f)

@@ -1,0 +1,22 @@
+---
+title: "One day build: Shiny effect sizes"
+author: ~
+date: ' 2017-06-26T16:09:00-05:00'
+slug: effect-size-calculator
+categories: ["R", "Shiny", "statistics"]
+tags: ["R", "Shiny", "statistics"]
+description: ~
+summary: "Take your effect sizes on the go."
+publishDate: ' 2017-06-26T16:09:00-05:00'
+DisableComments: no
+---
+
+It had been a long time since I had built anything, and I needed to scratch the itch. I decided to build a Shiny port of [Daniël Lakens's beloved effect size calculator spreadsheets](https://osf.io/ixGcd/). You can find the app itself [here](https://katherinemwood.shinyapps.io/lakens_effect_sizes/).
+
+These sheets are handy for a number of reasons, primarily if a paper or talk reports stats but no effect sizes (or if you want to double-check reported stats or effect sizes). I thought it would be convenient to have an online version.
+
+All of the math is based on what's used in the spreadsheet, and the default examples are taken from there too.
+
+This was a really fun build, mostly because the actual math was pretty straightforward (and I could easily check it against the spreadsheets to make sure it was working, which is a refreshing change). I got to spend more time digging into the web-dev side of things, dealing with layout and the reactivity of the components of the app. I learned a lot, and it was great to be working with Shiny again. Big thanks to Daniël Lakens for giving me the go-ahead to do this!
+
+The code is [on Github](https://github.com/katherinemwood/lakens_effect_sizes). Suggestions for improvements and bug reporting encouraged!

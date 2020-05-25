@@ -1,0 +1,61 @@
+---
+title: "CORVIDS 2.0: Faster, more stable, and now on Windows"
+author: ~
+date: '2018-05-08T10:04:53-05:00'
+slug: corvids-2.0
+categories: ["programming", "reproducibility", "statistics"]
+tags: ["Python", "programming", "reproducibility", "statistics"]
+description: ~
+summary: "We introduce some major improvements."
+publishDate: '2018-05-08T10:04:53-05:00'
+DisableComments: no
+---
+
+
+
+<p>Some exciting CORVIDS news–we made some <em>major</em> improvements to how things work, and we’ve released a brand new version! We now also have a standalone for Windows users, so no more wrestling with dependencies.</p>
+<p>If you want details on what’s changed, read on. If you just want the good stuff, head over to the <a href="https://github.com/katherinemwood/corvids/releases/tag/v2.0.0">latest release.</a></p>
+<div id="whats-new" class="section level1">
+<h1>What’s new:</h1>
+<div id="speeeeeeeed" class="section level2">
+<h2>SPEEEEEEEED</h2>
+<p>We used some mathematical properties of variances to vastly speed up solving time a factor of <span class="math inline">\(2n^2\)</span>, where <span class="math inline">\(n\)</span> is the number of subjects/samples (details are in the <a href="https://osf.io/rvgqk/">updated preprint</a> for the curious). Now the program will only check at valid variances, and it won’t waste any time checking variances that are impossible. This cuts the number of pairs it has to search way down, and you no longer have to be gun-shy about how much tolerance you set. Even large tolerances will only add a constrained number of possible variances (dependent on scale and sample size).</p>
+<p>Here’s a comparison of the old CORVIDS searching with large tolerance vs. the new CORVIDS, with a scale of 1-7 and a sample size of 10.</p>
+<p>Before:</p>
+<div class="figure">
+<img src="/post/images/corvids1.0_small_scale.png" />
+
+</div>
+<p>That’s a <em>lot</em> of combinations to search through (it is too many). CORVIDS would dismiss bad pairs pretty quickly, but it all added up to a lot of waiting time.</p>
+<p>After:</p>
+<div class="figure">
+<img src="/post/images/corvids2.0_small_scale.png" />
+
+</div>
+<p>That’s a lot fewer combinations, and it translates to way more speed. It also works at scales and sample sizes of any magnitude, so you no longer have to be nervous about adding tolerance to big scales and/or samples.</p>
+<p>Old CORVIDS starts a long journey for n=50 and scale of 1-10:</p>
+<div class="figure">
+<img src="/post/images/corvids1.0_big_scale.png" />
+
+</div>
+<p>Yikes. That’s, shall we say, less than ideal.</p>
+<p>But new CORVIDS cuts right to the chase:</p>
+<div class="figure">
+<img src="/post/images/corvids2.0_big_scale.png" />
+
+</div>
+<p>Much better.</p>
+<p>We’re thrilled we were able to speed things up so much, and we hope it improves your experience using the program.</p>
+</div>
+<div id="find-first" class="section level2">
+<h2>Find First</h2>
+<p>If you’re only interested in whether numbers are possible and don’t care about getting the full solution space, we have a <code>Stop After First Solution</code> option. We revamped how it works, making it faster. It also now returns solutions at multiple means/variances, if they exist.</p>
+</div>
+<div id="windows-standalone" class="section level2">
+<h2>Windows standalone</h2>
+<p>CORVIDS has a handful of dependencies that can be difficult to get working in harmony. Mac users always had the option of the standalone app, and now Windows users do too. Thanks for your patience, Windows users!</p>
+<p>We recommend using the standalone apps for routine applications. Unless you’re doing something ambitious or need programmatic access to the tool, the standalone app will give you all of the functionality with none of the pain. If you’ve struggled to get things working, we hope the standalone builds solve your problems.</p>
+<p>We also did some minor UI adjustments and bug fixes, some of them fairly substantial. You can view the changelog on the release page.</p>
+<p>If you notice any bugs or problems, feel free to email us or submit an issue on Github. Thanks to James Heathers, Nick Brown, and Jordan Anaya for their feedback and input as we’ve been making improvements.</p>
+</div>
+</div>

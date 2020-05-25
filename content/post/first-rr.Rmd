@@ -1,0 +1,44 @@
+---
+title: "What is it like to run a Registered Replication?"
+author: ~
+date: '2019-01-05T10:04:53-05:00'
+slug: first-rr
+categories: ["reproducibility", "open science"]
+tags: ["reproducibility", "open science", "preregistration"]
+description: ~
+summary: "Registered replications are generally considered the gold standard of replication studies. What does it take to actually run one?"
+publishDate: '2019-01-05T10:04:53-05:00'
+DisableComments: no
+---
+
+I'm one of many people who will extoll, at length, the virtues of replication and of registered reports. Until recently, I had only talked the talk; I had never actually run one myself. I had always wanted to, but I was also nervous about the prospect. There is no shortage of horror stories about replications that become contentious, or which get caught in review purgatory, or which are dismissed out of hand as a waste of time.
+
+Fortunately, our experience was overwhelmingly positive at every stage. Not every replictation project will be, and there are some key aspects that made a big difference. The entire process was much more rewarding and meaningful than I was expecting.
+
+So, how does the process work? What was it like, my first time out?
+
+To start, my advisor and I decided from the beginning that we were going to approach this project as a *registered* replication report. This refers to a publication type in which manuscripts are reviewed in two stages. In the first stage, you submit a Stage 1 manuscript in which you essentially write the first half of a traditional manuscript--the introduction, the methods, and how you intend to analyze the data (the particulars will vary from journal to journal). This format isn't exclusively for replications, but is particularly well-suited to them. The experiments already have context, both from when they were originally published and based on their subsequent impact on the literature, which makes the introduction fairly straightforward. The methods are already decided (barring some adjustments, perhaps), and you will probably be running the same analyses that the original authors did.
+
+The other advantage to this format is that review and acceptance decisions occur before results are known. This can help cool off a potentially contentious process; during Stage 1, because there are no results, everyone can engage more dispassionately in evaluating the methods.
+
+To prepare our Stage 1 submission, we did everything required to run the actual experiment. We spent a lot of time thinking through how we were going to implement these experiments, and tried to make sure that every change we made to the original method was in the service of efficiency or methodological soundness. Not one change we made was arbitrary, and it took nearly as long to hammer out these methods as it would an original experiment even though most of the heavy lifting had been taken care of. 
+
+Once we settled on our approach, I programmed the experiments, rigged up some interactive demos, and programmed the analysis and tested it with some simulated data. We adapted some old-school inattentional blindness experiments to run on a large scale on MTurk. The upside to this is that this is a method we have a lot of experience in; I've run dozens of these experiments online by now, and worked out a lot of the bugs. The downside was this marked the most substantial departure from the original methods, and I was concerned it might be controversial with reviewers. But, I was prepared to argue the merits, and we pressed on.
+
+(I'll spare you the details of the experiments themselves, why we chose them in particular, etc., since it won't be interesting or relevant to everyone; feel free to check out the paper linked at the end if you're curious!)
+
+We decided to submit the paper to Attention, Perception, & Psychophysics. Lots of journals offer registered reports now, but choice of outlet can have a substantial impact on your submission experience. We had already had a great experience submitting an earlier paper to AP&P, and we knew that the editor (Mike Dodd) was wonderful and that we'd be in good hands. 
+
+Like with any other manuscript, this initial submission and review is the slowest part of the process. When we got our reviews back, I was pleasantly surprised. Not only did we have a lot of support from the editor, but the original authors were available to review. They made great points, agreeing with some of our changes and pushing back on others. We made a few minor adjustments to our method and manuscript, corrected a few small errors, and sent back a revision. We received our provisional acceptance within a week.
+
+This was the phase I was most concerned about, and at least in this case, those fears were unfounded. The entire Stage 1 process felt very collaborative, and it meant a great deal to me personally to have the original authors sign off on the method. I have tremendous respect for the studies we replicated and wanted to do right by them.
+
+After the provisional acceptance, it was off to the races. We preregistered our provisionally-accepted Stage 1 manuscript on OSF (they even have a special format just for that!), and then launched the experiments. Because everything had been prepared and tested ahead of time, the data were collected and analyzed within a week. We wrote up the results and discussion and submitted our Stage 2 manuscript back to AP&P.
+
+A lot of people--not unreasonably--balk at the idea of two rounds of peer review (particularly after a multi-round Stage 1 review), but Stage 2 review is much more limited in scope compared to Stage 1. Its primary function is to ensure that you ran the experiment(s) and analyzed the data the way you said you would in your Stage 1 manuscript, and to review the way you interpreted and contextualized your results (your discussion, essentially). This review was done in a matter of days, and required only a few minor changes on our end. And then it was done!
+
+I was pleasantly surprised at the entire process. It was a priviledge to have the original authors review our approach, and the Stage 1 review felt very collaborative. I also found the process of designing and running this replication much more meaningful than I anticipated. However, I also recognize that we got lucky, in many ways. The review process was not contentious in our case, but could have been. The editor was supportive and treated the RR as a publication worthy of time and attention; not all journals or editors will.
+
+Every experience won't be like mine, but I'm so glad I finally took the plunge and ran this replication. If you've been on the fence about running your own, consider going for it!
+
+If you're curious about how a manuscript evolves between Stage 1 and Stage 2, you can check out both versions on the [project's OSF page](https://osf.io/7mtzn/). You can find the final online version [here](http://link.springer.com/article/10.3758/s13414-018-1629-1).
