@@ -5,7 +5,7 @@ jobDate: 2019
 projectUrl: https://github.com/katherinemwood/corvids
 techs:
 - python
-thumbnail: corvids/corvid.png
+thumbnail: corvids/Corvid.png
 title: CORVIDS
 work:
 - reproducibility
